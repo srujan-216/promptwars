@@ -5,7 +5,7 @@
 > `rangeAppearsNearQuote` — and the test that proves it,
 > `rejects_prompt_injected_reference_range` in
 > [`lib/server/extraction/pipeline.test.ts`](lib/server/extraction/pipeline.test.ts).
-> **Run:** `pnpm install && pnpm verify` — typecheck, lint, 521 tests, build. No API key needed.
+> **Run:** `pnpm install && pnpm verify` — typecheck, lint, 532 tests, build. No API key needed.
 > **Live:** not yet deployed.
 
 Most AI medical tools ask you to trust the model. MedLens verifies it. Every extracted
@@ -164,11 +164,20 @@ Two claims, both asserted by tests rather than argued:
   call and six deterministic stages` reads the pipeline trace and asserts the ratio
   directly. Summary generation is a separate stage outside that count — see the table
   above for calls per submission.
-- **Re-submitting a document costs zero AI calls.** Requests are keyed by
-  `sha256(model + systemInstruction + prompt + responseSchema)`. `costs zero model calls
-  when the same document is submitted again` runs the full pipeline twice and asserts the
-  underlying client was called exactly once. The schema is part of the key, so asking a
-  genuinely new question correctly misses the cache.
+- **Re-submitting a document costs zero AI calls — on a warm instance.** Requests are keyed
+  by `sha256(model + systemInstruction + prompt + responseSchema)`. The schema is part of the
+  key, so asking a genuinely new question correctly misses the cache.
+
+  The precise scope, because "zero calls" is easy to overstate: the provider is
+  module-scoped ([`providerRegistry.ts`](lib/server/ai/providerRegistry.ts)), so the cache
+  lives as long as one warm serverless instance. A resubmission served by that instance costs
+  nothing; one served after a cold start, or by a different instance, pays full price. There
+  is **no** cross-instance cache — that needs Redis or similar and is not built.
+
+  `serves a second request from the cache the first request populated` proves it survives
+  between requests, and `starts empty after a reset, which is what a cold start looks like`
+  pins the limit. The cache is capped at 100 entries with oldest-first eviction, because
+  module scope means it outlives the request that filled it.
 
 Everything that can be decided by a lookup or an arithmetic comparison is — terminology
 normalization, range evaluation, conflict rules, clarification questions, report
@@ -176,7 +185,7 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 
 ## Tests
 
-521 tests, all passing.
+532 tests, all passing.
 
 | Module | Tests |
 | --- | --- |
@@ -201,7 +210,8 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 | `lib/intake/schema.ts` + `present.ts` | 21 |
 | `components/medical/IntakeForm.tsx` | 23 |
 | `lib/intake` pipeline integration | 9 |
-| `lib/server/ai/provider.ts` | 15 |
+| `lib/server/ai/provider.ts` | 18 |
+| `lib/server/ai/providerRegistry.ts` | 8 |
 | `lib/server/extraction/pipeline.ts` | 14 |
 | `lib/server/extraction/fallback.ts` | 10 |
 | `lib/env.ts` | 10 |

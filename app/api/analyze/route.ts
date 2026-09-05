@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
-import { createGeminiClient, createProvider, type ModelClient } from '@/lib/server/ai/provider';
-import { createPatternFallbackClient } from '@/lib/server/extraction/fallback';
+import { getProvider } from '@/lib/server/ai/providerRegistry';
 import { PipelineError, runExtractionPipeline } from '@/lib/server/extraction/pipeline';
 import { intakeForPipeline, intakeToSections } from '@/lib/intake/present';
 import { EMPTY_INTAKE, intakeSchema } from '@/lib/intake/schema';
@@ -42,20 +41,6 @@ const requestSchema = z.object({
 
 export type AnalyzeMode = 'gemini' | 'pattern_fallback';
 
-/**
- * Choose the extraction client.
- *
- * With no API key we use deterministic pattern matching, NOT a simulated model call.
- * The mode travels back to the client so the interface can say which one ran — a result
- * produced without a model must never be presented as though a model produced it.
- */
-function selectClient(): { client: ModelClient; mode: AnalyzeMode } {
-  if (typeof process.env['GEMINI_API_KEY'] === 'string' && process.env['GEMINI_API_KEY'] !== '') {
-    return { client: createGeminiClient(), mode: 'gemini' };
-  }
-  return { client: createPatternFallbackClient(), mode: 'pattern_fallback' };
-}
-
 export async function POST(request: Request): Promise<Response> {
   let body: unknown;
   try {
@@ -74,8 +59,9 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: message }, { status: 400 });
   }
 
-  const { client, mode } = selectClient();
-  const provider = createProvider({ client });
+  // Module-scoped: the cache survives between requests handled by the same warm instance.
+  // See lib/server/ai/providerRegistry.ts for exactly what that does and does not promise.
+  const { provider, mode } = getProvider();
 
   try {
     // The earlier report goes through the same pipeline — same verification, same range

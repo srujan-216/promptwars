@@ -165,3 +165,41 @@ describe('createProvider — failure handling', () => {
     });
   });
 });
+
+describe('createProvider — cache is bounded', () => {
+  it('evicts the oldest entry once the ceiling is reached', async () => {
+    const provider = createProvider({
+      client: countingClient('{"ok":true}'),
+      maxCacheEntries: 2,
+    });
+
+    await provider.generate({ ...REQUEST, prompt: 'one' });
+    await provider.generate({ ...REQUEST, prompt: 'two' });
+    await provider.generate({ ...REQUEST, prompt: 'three' });
+
+    // Never grows past the ceiling: module-scoped in production, so unbounded would leak.
+    expect(provider.cacheSize()).toBe(2);
+  });
+
+  it('re-fetches an entry that was evicted', async () => {
+    const client = countingClient('{"ok":true}');
+    const provider = createProvider({ client, maxCacheEntries: 1 });
+
+    await provider.generate({ ...REQUEST, prompt: 'one' });
+    await provider.generate({ ...REQUEST, prompt: 'two' });
+    await provider.generate({ ...REQUEST, prompt: 'one' });
+
+    expect(client.calls()).toBe(3);
+  });
+
+  it('keeps the most recent entry cached', async () => {
+    const client = countingClient('{"ok":true}');
+    const provider = createProvider({ client, maxCacheEntries: 2 });
+
+    await provider.generate({ ...REQUEST, prompt: 'one' });
+    await provider.generate({ ...REQUEST, prompt: 'two' });
+    const again = await provider.generate({ ...REQUEST, prompt: 'two' });
+
+    expect(again.cached).toBe(true);
+  });
+});
