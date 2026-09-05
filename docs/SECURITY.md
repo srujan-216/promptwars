@@ -102,8 +102,16 @@ verified positionally; and `lib/ranges/evaluate.ts` — a pure function — comp
 
 - **Nothing is persisted.** No database, no file writes, no in-memory store surviving a
   request. The worked example is rebuilt from source on every render.
-- **Nothing is logged.** There are no `console` or logger calls in `lib/` or `app/`, so no
-  PHI can reach a log.
+- **Logging is redacted.** [`lib/logging.ts`](../lib/logging.ts) redacts by FIELD NAME —
+  `documentText`, `sourceQuote`, `prompt`, `intake`, `identifier`, `notes`, `apiKey` and
+  `GEMINI_API_KEY` are replaced whatever they contain. Redacting on the name fails closed;
+  detecting PHI by inspecting values would fail open, and an unusual value nothing recognises
+  would be logged. Bare strings over 200 chars and arrays over 20 entries are summarised
+  rather than written.
+- **Upstream error text is untrusted.** An SDK's message is written by someone else and could
+  echo the request, so `describeError` includes it only at `LOG_LEVEL=debug`, truncated to
+  300 characters. `name` and `code` are ours and always safe. Do not run `debug` against real
+  patient data.
 - Error messages crossing the user boundary are typed and generic. `PipelineError` carries a
   `userMessage` separate from its technical detail, and tests assert the user-facing string
   contains neither document text nor raw model output (`never leaks raw model output or
@@ -111,9 +119,11 @@ verified positionally; and `lib/ranges/evaluate.ts` — a pure function — comp
 - `/api/health` reports status, environment name, commit SHA and uptime — no environment
   values and no data. Test: `leaks no secret-bearing environment variables`.
 
-**Gap, stated plainly:** `redact()` and `lib/logging.ts` are named in `CLAUDE.md` rule 8 but
-**do not exist**. Rule 8 currently holds only because nothing logs at all. The moment
-logging is introduced, `redact()` must exist first.
+**Previously a gap, now closed.** `redact()` and `lib/logging.ts` did not exist for most of
+the build, and rule 8 held only because nothing logged at all. That was defensible until the
+first deployment returned 422 on every extraction with completely empty function logs — a
+production failure with no observability is its own defect. `redact()` was written first, and
+logging added on top of it.
 
 ## Two decisions that could be misread as weakened boundaries
 
@@ -196,6 +206,6 @@ A real limit needs shared state (Redis, Upstash, or the platform gateway) and is
 - **Authentication and access control.** None. There are no accounts and no stored records.
   Any deployment serving real patient data would need both before anything else here matters.
 - **Distributed rate limiting.** Only the per-instance bucket above.
-- **Audit logging.** None — and it cannot be added until `redact()` exists.
+- **Audit logging.** None. `redact()` now exists, so this is buildable, but no audit trail is written.
 - **Transport and storage encryption.** Not applicable: nothing is stored and nothing is
   deployed.

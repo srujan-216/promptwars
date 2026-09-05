@@ -42,12 +42,20 @@ export class PipelineError extends Error {
   readonly code: PipelineErrorCode;
   /** Safe to show a user. Never contains document text or raw model output. */
   readonly userMessage: string;
+  /** The provider's failure code, when the failure came from there. Safe to log. */
+  readonly providerCode: string | undefined;
 
-  constructor(code: PipelineErrorCode, userMessage: string, technical?: string) {
+  constructor(
+    code: PipelineErrorCode,
+    userMessage: string,
+    technical?: string,
+    providerCode?: string,
+  ) {
     super(technical ?? userMessage);
     this.name = 'PipelineError';
     this.code = code;
     this.userMessage = userMessage;
+    this.providerCode = providerCode;
   }
 }
 
@@ -128,10 +136,14 @@ export async function runExtractionPipeline(input: PipelineInput): Promise<Pipel
     servedFromCache = result.cached;
   } catch (cause) {
     // Typed and generic. The raw provider message never reaches the user.
+    const technical =
+      cause instanceof ProviderError ? `${cause.code}: ${cause.message}` : undefined;
+
     throw new PipelineError(
       'extraction_failed',
       'The document could not be read. Please check it and try again.',
-      cause instanceof ProviderError ? `${cause.code}: ${cause.message}` : undefined,
+      technical,
+      cause instanceof ProviderError ? cause.code : undefined,
     );
   }
 

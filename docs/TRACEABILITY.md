@@ -67,7 +67,7 @@ What enforces each rule from `CLAUDE.md`. "Enforced by" means a tool fails the b
 | 5 | No diagnosis, prescription or dosage language | `lib/server/ai/guardrail.ts`; test `the fallback text itself passes the guardrail` | Active |
 | 6 | Documents are untrusted input | `<untrusted_document>` delimiters and sentinel neutralisation in `lib/server/extraction/prompt.ts` | Active |
 | 7 | Prefer deterministic code over an AI call | 6 of 7 pipeline stages are pure; test `makes exactly one AI call and six deterministic stages` | Active |
-| 8 | Never log PHI | Nothing logs. `redact()` does not exist — see `docs/SECURITY.md` | Partial |
+| 8 | Never log PHI | `redact()` in `lib/logging.ts`; test `redacts %s by name, whatever it contains` | Active |
 | 9 | Tests ship with their module | Convention; CI runs `pnpm test` | Active |
 | 9b | Contrast meets WCAG AA | `lib/view/contrast.ts`; test `%s clears 4.5:1` over all 24 pairs | Active |
 | 10 | Status never by colour alone | `components/medical/StatusBadge.tsx` emits icon + text + colour; test `communicates status with text, not colour alone` | Active |

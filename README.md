@@ -5,7 +5,7 @@
 > `rangeAppearsNearQuote` — and the test that proves it,
 > `rejects_prompt_injected_reference_range` in
 > [`lib/server/extraction/pipeline.test.ts`](lib/server/extraction/pipeline.test.ts).
-> **Run:** `pnpm install && pnpm verify` — typecheck, lint, 620 tests, build. No API key needed.
+> **Run:** `pnpm install && pnpm verify` — typecheck, lint, 647 tests, build. No API key needed.
 > **Live:** not yet deployed.
 
 Most AI medical tools ask you to trust the model. MedLens verifies it. Every extracted
@@ -185,7 +185,7 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 
 ## Tests
 
-620 tests, all passing.
+647 tests, all passing.
 
 | Module | Tests |
 | --- | --- |
@@ -216,6 +216,7 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 | `lib/server/rateLimit.ts` | 12 |
 | security headers (`next.config.ts`) | 15 |
 | `lib/view/contrast.ts` (WCAG ratios) | 32 |
+| `lib/logging.ts` (PHI redaction) | 27 |
 | `lib/server/extraction/pipeline.ts` | 14 |
 | `lib/server/extraction/fallback.ts` | 10 |
 | `lib/env.ts` | 10 |
@@ -286,8 +287,9 @@ than falling back to a placeholder.
   unverified, and text over a gradient or image would be out of scope.
 - Accessibility coverage is component- and page-level under jsdom; there is no
   browser-based scan, so anything only a real rendering engine can catch is not caught.
-- `redact()` / `lib/logging.ts` does not exist. No PHI is currently logged because nothing
-  logs at all — see [`docs/SECURITY.md`](docs/SECURITY.md).
+- Logging redacts by field name, not by inspecting values, so a sensitive field added to a
+  payload without being added to `SENSITIVE_KEYS` would not be caught. See
+  [`docs/SECURITY.md`](docs/SECURITY.md).
 
 ## Future work — NOT built
 

@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { getProvider } from '@/lib/server/ai/providerRegistry';
 import { analyzeRateLimiter, identifyClient } from '@/lib/server/rateLimit';
+import { describeError, log } from '@/lib/logging';
 import { PipelineError, runExtractionPipeline } from '@/lib/server/extraction/pipeline';
 import { intakeForPipeline, intakeToSections } from '@/lib/intake/present';
 import { EMPTY_INTAKE, intakeSchema } from '@/lib/intake/schema';
@@ -164,9 +165,15 @@ export async function POST(request: Request): Promise<Response> {
     });
   } catch (error) {
     if (error instanceof PipelineError) {
+      // Server-side only, and redacted: without this a production failure is invisible.
+      // The deployed site returned 422 on every extraction with completely empty logs.
+      log('error', 'extraction_failed', { mode, ...describeError(error) });
+
       // userMessage is deliberately generic; the technical detail stays server-side.
       return Response.json({ error: error.userMessage }, { status: 422 });
     }
+
+    log('error', 'unhandled_route_error', { mode, ...describeError(error) });
     return Response.json(
       { error: 'Something went wrong while processing the document.' },
       { status: 500 },
