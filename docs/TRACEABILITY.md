@@ -37,6 +37,7 @@ All six core requirements now have a UI path that reaches the code behind them.
 | `components/medical/SummarySection.tsx` | Renders the summary; shows a fired guardrail | `does not badge the deterministic template as AI-written` | 14 |
 | `components/medical/ConflictsSection.tsx` | Renders flagged contradictions | `says it flags contradictions rather than resolving them` | (in page tests) |
 | `components/medical/QuestionsSection.tsx` | Renders clarification questions | `renders clarification questions` | (in page tests) |
+| `components/medical/PrintButton.tsx` + `app/globals.css` | Print-to-PDF via the browser pipeline | `keeps the quarantine section, still separate and still labelled`, `prints the status word, not just a colour` | 15 |
 | `components/medical/SourceView.tsx` | Side-by-side source and fields; keyboard-operable highlight | `activates the highlight with Enter`, `says explicitly that there is nothing to highlight` | 19 |
 | `lib/view/highlight.ts` | Locates a quote in the source, with the verifier's exact tolerance | `agrees for %j` (highlighting agrees with verification) | 14 |
 | `lib/sample/example.ts` | Fixture-backed full result for the no-key path | `passes the real guardrail`, `every quoted sourceQuote that verified is genuinely in the document` | 13 |
@@ -70,5 +71,5 @@ What enforces each rule from `CLAUDE.md`. "Enforced by" means a tool fails the b
 ## Not built
 
 Deliberate absences: file upload (paste only), persistence of any kind, authentication and
-access control, PDF export, and deployment. See the README's *Future work* section. Nothing in this
+access control, generated-PDF export (printing is used instead), and deployment. See the README's *Future work* section. Nothing in this
 repository claims otherwise.

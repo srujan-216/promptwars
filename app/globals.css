@@ -1,1 +1,48 @@
 @import 'tailwindcss';
+
+/*
+ * Print styles.
+ *
+ * The printed record IS the on-screen record — there is no second layout to drift out of
+ * sync. Printing hides the controls and lets the panes expand; it never rebuilds anything.
+ *
+ * What must survive onto paper:
+ *   - the not-medical-advice notice
+ *   - integrity counts, the summary, conflicts, questions
+ *   - the structured record, with every origin badge and status badge
+ *   - the quarantine section, still separate and still labelled
+ *
+ * Status and origin are carried by icon + text, not colour, which is exactly why they
+ * survive a greyscale printer (CLAUDE.md rule 10). `print-color-adjust: exact` asks the
+ * browser to keep the fills where it can, but nothing depends on it.
+ */
+@media print {
+  /* The banner is sticky on screen; on paper it belongs at the top of page one. */
+  .sticky {
+    position: static !important;
+  }
+
+  /* Scroll containers must expand, or printing truncates the record. */
+  .max-h-96,
+  .overflow-auto,
+  .overflow-x-auto {
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  /* Keep badge and highlight fills when the browser is willing to print them. */
+  mark,
+  [class*='bg-'] {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Avoid splitting a section across pages where the browser can help it. */
+  section {
+    break-inside: avoid;
+  }
+
+  a[href^='#']::after {
+    content: '';
+  }
+}

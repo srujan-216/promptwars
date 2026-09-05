@@ -9,6 +9,7 @@ import { QuestionsSection } from '@/components/medical/QuestionsSection';
 import { IntakeForm } from '@/components/medical/IntakeForm';
 import { IntegrityPanel } from '@/components/medical/IntegrityPanel';
 import { QuarantineSection } from '@/components/medical/QuarantineSection';
+import { PrintButton } from '@/components/medical/PrintButton';
 import { SourceView } from '@/components/medical/SourceView';
 import { SummarySection, type SummaryView } from '@/components/medical/SummarySection';
 import { StructuredRecord, type RecordData } from '@/components/medical/StructuredRecord';
@@ -166,7 +167,11 @@ export function ReportAnalyzer({ exampleDocument }: { exampleDocument: string })
 
   return (
     <div className="flex flex-col gap-8">
-      <section aria-labelledby="paste-heading" className="rounded-lg border border-slate-200 bg-white p-5">
+      {/* Controls are screen-only: a printed record should carry the findings, not the form. */}
+      <section
+        aria-labelledby="paste-heading"
+        className="rounded-lg border border-slate-200 bg-white p-5 print:hidden"
+      >
         <h2 id="paste-heading" className="text-lg font-semibold text-slate-900">
           Paste a report
         </h2>
@@ -283,7 +288,11 @@ export function ReportAnalyzer({ exampleDocument }: { exampleDocument: string })
 
           <IntegrityPanel audit={result.audit} summaryGenerated={result.summary !== null} />
           <SummarySection summary={result.summary} />
-          <SourceView sourceText={submittedText} fields={result.audit.fields} />
+          {/* Screen-only: the full document dump is navigation, not part of the record. */}
+          <div className="print:hidden">
+            <SourceView sourceText={submittedText} fields={result.audit.fields} />
+          </div>
+          <PrintButton />
           <ConflictsSection conflicts={result.conflicts} />
           <QuestionsSection questions={result.questions} />
           <ComparisonTable rows={result.comparison} />

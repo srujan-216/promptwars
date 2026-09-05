@@ -5,6 +5,7 @@ import { IntegrityPanel } from '@/components/medical/IntegrityPanel';
 import { QuarantineSection } from '@/components/medical/QuarantineSection';
 import { QuestionsSection } from '@/components/medical/QuestionsSection';
 import { StructuredRecord } from '@/components/medical/StructuredRecord';
+import { PrintButton } from '@/components/medical/PrintButton';
 import { SourceView } from '@/components/medical/SourceView';
 import { SummarySection } from '@/components/medical/SummarySection';
 import { buildSampleResult, SAMPLE_DOCUMENT } from '@/lib/sample/example';
@@ -61,9 +62,12 @@ export function WorkedExample(): ReactElement {
       <SummarySection summary={summary} />
       <ConflictsSection conflicts={conflicts} />
       <QuestionsSection questions={questions} />
-      <SourceView sourceText={SAMPLE_DOCUMENT} fields={audit.fields} />
+      <div className="print:hidden">
+        <SourceView sourceText={SAMPLE_DOCUMENT} fields={audit.fields} />
+      </div>
       <StructuredRecord data={record} />
       <QuarantineSection items={quarantined} />
+      <PrintButton />
     </section>
   );
 }

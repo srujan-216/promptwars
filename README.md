@@ -81,6 +81,14 @@ something the live system would have blocked.
 The test `shows the unverifiable field in the quarantine region only` asserts the Vitamin D
 field appears **zero** times inside the structured record.
 
+**Print to PDF.** The record prints via the browser's own print pipeline — "Save as PDF" in
+the print dialogue. Deliberately *not* a generated PDF: a generator re-implements the layout,
+and a second implementation can drift from the first. Printing renders the page already on
+screen, so paper and screen cannot disagree. Controls are hidden; the disclaimer, integrity
+counts, summary, conflicts, questions, record and the separate quarantine section all
+survive, and every origin and status badge carries icon + text so a greyscale printer loses
+nothing. `app/print.test.tsx` asserts that contract structurally.
+
 **Side by side.** The document sits next to the extracted fields; selecting a field
 highlights the exact text it came from. Selecting the quarantined field highlights nothing
 and says so — you can see the quoted text is genuinely absent rather than being told. The
@@ -133,7 +141,7 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 
 ## Tests
 
-454 tests, all passing.
+469 tests, all passing.
 
 | Module | Tests |
 | --- | --- |
@@ -145,6 +153,7 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 | `lib/compare/diff.ts` | 19 |
 | `app/page.tsx` (incl. axe) | 25 |
 | `components/medical/SourceView.tsx` | 19 |
+| print contract (`app/print.test.tsx`) | 15 |
 | `lib/view/highlight.ts` | 14 |
 | `lib/sample/example.ts` (fixture honesty) | 13 |
 | `lib/clarify/questions.ts` | 18 |
@@ -217,7 +226,6 @@ rather than an oversight.
   reload rebuilds the sample from source. Records do not survive anything.
 - **Authentication and access control.** None. There are no users and no patient records
   to protect.
-- **PDF export.** Not built.
 - **Deployment.** Nothing is deployed yet and there is no live URL. The target is Vercel
   and the runbook is written ([`docs/deploy.md`](docs/deploy.md)), but it has not been run.
   There is also no Dockerfile and no container image — Cloud Run was an early plan that was
