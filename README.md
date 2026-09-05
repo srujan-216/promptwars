@@ -122,7 +122,7 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 
 ## Tests
 
-415 tests, all passing.
+421 tests, all passing.
 
 | Module | Tests |
 | --- | --- |
@@ -184,6 +184,7 @@ than falling back to a placeholder.
 - [`docs/TRACEABILITY.md`](docs/TRACEABILITY.md) — requirement → file → test
 - [`docs/RESPONSIBLE_AI.md`](docs/RESPONSIBLE_AI.md) — what this deliberately never builds
 - [`docs/SECURITY.md`](docs/SECURITY.md) — keys, untrusted input, injection defence, PHI
+- [`docs/deploy.md`](docs/deploy.md) — Vercel runbook, env vars, why the key cannot leak
 
 ## Known gaps
 
@@ -204,5 +205,7 @@ rather than an oversight.
 - **Authentication and access control.** None. There are no users and no patient records
   to protect.
 - **PDF export.** Not built.
-- **Cloud Run deployment.** Nothing is deployed. There is no Dockerfile, no deployment
-  pipeline, and no running service.
+- **Deployment.** Nothing is deployed yet and there is no live URL. The target is Vercel
+  and the runbook is written ([`docs/deploy.md`](docs/deploy.md)), but it has not been run.
+  There is also no Dockerfile and no container image — Cloud Run was an early plan that was
+  cut, and nothing was built for it.

@@ -10,6 +10,21 @@ import { buildFactsNarrative, buildSummaryFacts, presentAudit } from '@/lib/view
 
 export const dynamic = 'force-dynamic';
 
+/**
+ * Node runtime, declared explicitly: the provider uses `node:crypto` for the cache key,
+ * which the Edge runtime does not supply. Without this a future default change could move
+ * the route to Edge and break extraction at runtime rather than at build time.
+ */
+export const runtime = 'nodejs';
+
+/**
+ * A Gemini extraction call, plus a second call when a previous report is supplied, plus a
+ * summary call, comfortably exceeds Vercel's 10s default for serverless functions. 60s is
+ * the ceiling on the free tier and is far more than a normal request needs — it exists so
+ * a slow model response fails as a slow response, not as a truncated one.
+ */
+export const maxDuration = 60;
+
 /** Roughly 40 pages of text. Bounds both memory and the model bill. */
 const MAX_DOCUMENT_CHARS = 100_000;
 
