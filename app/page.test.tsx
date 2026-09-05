@@ -252,3 +252,32 @@ describe('HomePage — the worked example shows a complete result', () => {
     }
   });
 });
+
+describe('HomePage — skip link', () => {
+  it('offers a skip link as the first focusable element', async () => {
+    const user = userEvent.setup();
+    render(<HomePage />);
+
+    await user.tab();
+
+    expect(screen.getByRole('link', { name: 'Skip to main content' })).toHaveFocus();
+  });
+
+  it('points at the main landmark', () => {
+    render(<HomePage />);
+
+    expect(screen.getByRole('link', { name: 'Skip to main content' })).toHaveAttribute(
+      'href',
+      '#main-content',
+    );
+    expect(screen.getByRole('main')).toHaveAttribute('id', 'main-content');
+  });
+
+  it('keeps the target focusable so the skip actually moves focus', () => {
+    render(<HomePage />);
+
+    // Without tabIndex={-1} the browser scrolls but focus stays put, and the next Tab
+    // returns to the top of the page — the skip link would look like it did nothing.
+    expect(screen.getByRole('main')).toHaveAttribute('tabindex', '-1');
+  });
+});
