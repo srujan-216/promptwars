@@ -17,7 +17,7 @@ import {
   buildExtractionPrompt,
 } from '@/lib/server/extraction/prompt';
 import {
-  extractionResponseJsonSchema,
+  extractionResponseGeminiSchema,
   extractionResponseSchema,
   type ExtractionResponse,
 } from '@/lib/server/extraction/schema';
@@ -129,7 +129,7 @@ export async function runExtractionPipeline(input: PipelineInput): Promise<Pipel
     const result = await provider.generate({
       systemInstruction: EXTRACTION_SYSTEM_INSTRUCTION,
       prompt: buildExtractionPrompt({ documentText }),
-      responseSchema: extractionResponseJsonSchema,
+      responseSchema: extractionResponseGeminiSchema,
     });
     raw = result.data;
     aiCalls = result.callCount;

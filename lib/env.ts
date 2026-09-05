@@ -64,6 +64,22 @@ export function parseServerEnv(raw: Readonly<Record<string, string | undefined>>
 
 export const env: Env = parseEnv(process.env);
 
+/**
+ * The commit this build came from.
+ *
+ * Prefers an explicit GIT_SHA, then Vercel's own VERCEL_GIT_COMMIT_SHA, which the platform
+ * sets automatically. Without this there is no way to tell which commit is actually live —
+ * a gap that cost real time when a deployed fix could not be distinguished from a stale
+ * build. Returns null rather than a placeholder when genuinely unknown.
+ */
+export function deployedCommit(): string | null {
+  const explicit = env.GIT_SHA;
+  if (explicit !== undefined) return explicit;
+
+  const vercel = process.env['VERCEL_GIT_COMMIT_SHA'];
+  return typeof vercel === 'string' && vercel !== '' ? vercel : null;
+}
+
 let cachedServerEnv: ServerEnv | null = null;
 
 /**

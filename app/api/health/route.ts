@@ -1,4 +1,4 @@
-import { env } from '@/lib/env';
+import { deployedCommit, env } from '@/lib/env';
 
 /** Never cache: a health check must report the state of this instance, right now. */
 export const dynamic = 'force-dynamic';
@@ -24,7 +24,7 @@ export function GET(): Response {
   const payload: HealthPayload = {
     status: 'ok',
     appEnv: env.APP_ENV,
-    commit: env.GIT_SHA ?? null,
+    commit: deployedCommit(),
     uptimeSeconds: Math.round(process.uptime()),
   };
 

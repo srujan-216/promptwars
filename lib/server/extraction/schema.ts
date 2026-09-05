@@ -41,48 +41,57 @@ export type ExtractedLab = z.infer<typeof extractedLabSchema>;
 export type ExtractionResponse = z.infer<typeof extractionResponseSchema>;
 
 /**
- * The same shape expressed as a JSON schema for Gemini's `responseSchema`.
+ * The same shape expressed for Gemini's `responseSchema`.
  *
- * Kept adjacent to the Zod schema on purpose: this one constrains what the model may
- * emit, the Zod one verifies what actually arrived. Neither is trusted to do the other's
- * job — structured-output constraints are a convenience, not a guarantee.
+ * Kept adjacent to the Zod schema on purpose: this one constrains what the model may emit,
+ * the Zod one verifies what actually arrived. Neither is trusted to do the other's job —
+ * structured-output constraints are a convenience, not a guarantee.
+ *
+ * TYPES ARE UPPERCASE, and that is not cosmetic. `responseSchema` takes Google's own Schema
+ * type, an OpenAPI 3.0 subset whose `Type` enum is 'OBJECT' / 'STRING' / 'INTEGER'. Sending
+ * lowercase JSON Schema types made the API reject every request, and the deployed site
+ * returned 422 on every extraction until this was corrected.
+ *
+ * The sibling parameter `responseJsonSchema` does take standard JSON Schema — but its
+ * documented property list does NOT include `nullable`, which five fields here need. So the
+ * native Schema type is the correct target, not merely the more conventional one.
  */
-export const extractionResponseJsonSchema = {
-  type: 'object',
+export const extractionResponseGeminiSchema = {
+  type: 'OBJECT',
   properties: {
     patient: {
-      type: 'object',
+      type: 'OBJECT',
       properties: {
-        age: { type: 'integer', nullable: true },
-        sex: { type: 'string', nullable: true },
-        reportDate: { type: 'string', nullable: true, description: 'ISO YYYY-MM-DD' },
+        age: { type: 'INTEGER', nullable: true },
+        sex: { type: 'STRING', nullable: true },
+        reportDate: { type: 'STRING', nullable: true, description: 'ISO YYYY-MM-DD' },
       },
       required: ['age', 'sex', 'reportDate'],
     },
     labs: {
-      type: 'array',
+      type: 'ARRAY',
       items: {
-        type: 'object',
+        type: 'OBJECT',
         properties: {
-          name: { type: 'string' },
-          value: { type: 'number' },
-          unit: { type: 'string', nullable: true },
+          name: { type: 'STRING' },
+          value: { type: 'NUMBER' },
+          unit: { type: 'STRING', nullable: true },
           referenceText: {
-            type: 'string',
+            type: 'STRING',
             nullable: true,
             description: 'Reference range copied EXACTLY as printed, or null if none is printed.',
           },
           sourceQuote: {
-            type: 'string',
+            type: 'STRING',
             description: 'Verbatim text from the document containing this value.',
           },
-          confidence: { type: 'number' },
+          confidence: { type: 'NUMBER' },
         },
         required: ['name', 'value', 'unit', 'referenceText', 'sourceQuote', 'confidence'],
       },
     },
-    medications: { type: 'array', items: { type: 'string' } },
-    allergies: { type: 'array', items: { type: 'string' } },
+    medications: { type: 'ARRAY', items: { type: 'STRING' } },
+    allergies: { type: 'ARRAY', items: { type: 'STRING' } },
   },
   required: ['patient', 'labs', 'medications', 'allergies'],
 } as const;

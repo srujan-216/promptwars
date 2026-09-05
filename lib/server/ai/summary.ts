@@ -50,9 +50,11 @@ export interface GenerateSummaryInput {
   factsNarrative: string;
 }
 
-const summaryJsonSchema = {
-  type: 'object',
-  properties: { summary: { type: 'string' } },
+// Uppercase for the same reason as the extraction schema: Gemini's Schema type, not JSON
+// Schema. This one had the same defect and would have failed identically once reached.
+const summaryGeminiSchema = {
+  type: 'OBJECT',
+  properties: { summary: { type: 'STRING' } },
   required: ['summary'],
 } as const;
 
@@ -73,7 +75,7 @@ export async function generateSummary(input: GenerateSummaryInput): Promise<Summ
       const result = await provider.generate({
         systemInstruction,
         prompt: factsNarrative,
-        responseSchema: summaryJsonSchema,
+        responseSchema: summaryGeminiSchema,
       });
       aiCalls += result.callCount;
       return readSummary(result.data);
