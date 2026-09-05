@@ -14,7 +14,7 @@ Run `pnpm test` to verify every test named here.
 | CR-2 | Medical Report Processing | `components/medical/ReportAnalyzer.tsx` → `app/api/analyze/route.ts` → `lib/server/extraction/pipeline.ts` | `renders the result after a successful submission`, `evaluates status from the genuine printed range` | Done |
 | CR-3 | Structured Medical Record | `components/medical/StructuredRecord.tsx`, `lib/domain/types.ts` | `gives every section an accessible name`, `shows the unverifiable field in the quarantine region only` | Done |
 | CR-4 | Reference-Range Awareness | `lib/ranges/evaluate.ts` | `treats the lower bound as inclusive`, `returns no_reference_in_source when the range is null`, `returns unit_mismatch and refuses to compare when units differ` (46 tests) | Done |
-| CR-5 | Source & Provenance | `lib/verification/audit.ts`, `components/medical/OriginBadge.tsx`, `components/medical/QuarantineSection.tsx` | `quarantines a field whose quote is absent`, `rejects_prompt_injected_reference_range`, `flips a quarantined field to human-verified` | Done |
+| CR-5 | Source & Provenance | `lib/verification/audit.ts`, `components/medical/SourceView.tsx`, `components/medical/OriginBadge.tsx`, `components/medical/QuarantineSection.tsx` | `quarantines a field whose quote is absent`, `rejects_prompt_injected_reference_range`, `shows no highlight, because the quote is genuinely absent`, `flips a quarantined field to human-verified` | Done |
 | CR-6 | AI-Powered Summary | `components/medical/SummarySection.tsx` ← `app/api/analyze/route.ts` ← `lib/server/ai/summary.ts`, `lib/server/ai/guardrail.ts` | `renders the summary section when the server returns one`, `says visibly when the guardrail fired`, `falls back to the template when both attempts break rules` | Done |
 
 **On the qualified rows.** CR-2 is now genuinely Done: a user can paste a report and the
@@ -37,6 +37,8 @@ All six core requirements now have a UI path that reaches the code behind them.
 | `components/medical/SummarySection.tsx` | Renders the summary; shows a fired guardrail | `does not badge the deterministic template as AI-written` | 14 |
 | `components/medical/ConflictsSection.tsx` | Renders flagged contradictions | `says it flags contradictions rather than resolving them` | (in page tests) |
 | `components/medical/QuestionsSection.tsx` | Renders clarification questions | `renders clarification questions` | (in page tests) |
+| `components/medical/SourceView.tsx` | Side-by-side source and fields; keyboard-operable highlight | `activates the highlight with Enter`, `says explicitly that there is nothing to highlight` | 19 |
+| `lib/view/highlight.ts` | Locates a quote in the source, with the verifier's exact tolerance | `agrees for %j` (highlighting agrees with verification) | 14 |
 | `lib/sample/example.ts` | Fixture-backed full result for the no-key path | `passes the real guardrail`, `every quoted sourceQuote that verified is genuinely in the document` | 13 |
 | `lib/server/ai/provider.ts` | Gemini wrapper, sha256 cache, one retry | `serves an identical request from cache at zero cost` | 15 |
 | `lib/server/extraction/fallback.ts` | Pattern extraction when no API key is set | `produces a verified, evaluated record without any model call` | 10 |

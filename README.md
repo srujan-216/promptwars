@@ -81,6 +81,17 @@ something the live system would have blocked.
 The test `shows the unverifiable field in the quarantine region only` asserts the Vitamin D
 field appears **zero** times inside the structured record.
 
+**Side by side.** The document sits next to the extracted fields; selecting a field
+highlights the exact text it came from. Selecting the quarantined field highlights nothing
+and says so — you can see the quoted text is genuinely absent rather than being told. The
+highlighter uses the same matching tolerance as the verifier, and
+`highlighting agrees with verification` asserts the two can never disagree: a field the
+audit accepted is always highlightable, and one it rejected never is.
+
+Every field is a real `<button>` — focusable, Enter/Space activated, announced as a button
+— and the outcome is announced in an `aria-live` region, because the change happens in the
+other pane. Tested with `activates the highlight with Enter` and `... with Space`.
+
 ## Pipeline
 
 Each stage is a real file. Exactly one of the seven calls a model; the other six are pure
@@ -122,7 +133,7 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 
 ## Tests
 
-421 tests, all passing.
+454 tests, all passing.
 
 | Module | Tests |
 | --- | --- |
@@ -133,6 +144,8 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 | `lib/conflicts/detect.ts` | 25 |
 | `lib/compare/diff.ts` | 19 |
 | `app/page.tsx` (incl. axe) | 25 |
+| `components/medical/SourceView.tsx` | 19 |
+| `lib/view/highlight.ts` | 14 |
 | `lib/sample/example.ts` (fixture honesty) | 13 |
 | `lib/clarify/questions.ts` | 18 |
 | `components/medical/ReportAnalyzer.tsx` | 26 |

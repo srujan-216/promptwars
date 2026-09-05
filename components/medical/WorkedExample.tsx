@@ -5,8 +5,9 @@ import { IntegrityPanel } from '@/components/medical/IntegrityPanel';
 import { QuarantineSection } from '@/components/medical/QuarantineSection';
 import { QuestionsSection } from '@/components/medical/QuestionsSection';
 import { StructuredRecord } from '@/components/medical/StructuredRecord';
+import { SourceView } from '@/components/medical/SourceView';
 import { SummarySection } from '@/components/medical/SummarySection';
-import { buildSampleResult } from '@/lib/sample/example';
+import { buildSampleResult, SAMPLE_DOCUMENT } from '@/lib/sample/example';
 
 /**
  * A complete result, end to end, with no API key required.
@@ -60,6 +61,7 @@ export function WorkedExample(): ReactElement {
       <SummarySection summary={summary} />
       <ConflictsSection conflicts={conflicts} />
       <QuestionsSection questions={questions} />
+      <SourceView sourceText={SAMPLE_DOCUMENT} fields={audit.fields} />
       <StructuredRecord data={record} />
       <QuarantineSection items={quarantined} />
     </section>

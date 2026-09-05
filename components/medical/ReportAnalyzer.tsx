@@ -9,6 +9,7 @@ import { QuestionsSection } from '@/components/medical/QuestionsSection';
 import { IntakeForm } from '@/components/medical/IntakeForm';
 import { IntegrityPanel } from '@/components/medical/IntegrityPanel';
 import { QuarantineSection } from '@/components/medical/QuarantineSection';
+import { SourceView } from '@/components/medical/SourceView';
 import { SummarySection, type SummaryView } from '@/components/medical/SummarySection';
 import { StructuredRecord, type RecordData } from '@/components/medical/StructuredRecord';
 import type { QuarantinedItem } from '@/components/medical/QuarantineSection';
@@ -77,6 +78,9 @@ export function ReportAnalyzer({ exampleDocument }: { exampleDocument: string })
   const [status, setStatus] = useState<'idle' | 'working'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
+  // The text the result was produced from, frozen at submit so later edits to the
+  // textarea cannot desynchronise the source pane from the fields shown beside it.
+  const [submittedText, setSubmittedText] = useState('');
 
   async function onSubmit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
@@ -148,6 +152,7 @@ export function ReportAnalyzer({ exampleDocument }: { exampleDocument: string })
         return;
       }
 
+      setSubmittedText(text);
       setResult(validated.data);
     } catch {
       setError('Could not reach the server. Check your connection and try again.');
@@ -278,6 +283,7 @@ export function ReportAnalyzer({ exampleDocument }: { exampleDocument: string })
 
           <IntegrityPanel audit={result.audit} summaryGenerated={result.summary !== null} />
           <SummarySection summary={result.summary} />
+          <SourceView sourceText={submittedText} fields={result.audit.fields} />
           <ConflictsSection conflicts={result.conflicts} />
           <QuestionsSection questions={result.questions} />
           <ComparisonTable rows={result.comparison} />
