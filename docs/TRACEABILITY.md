@@ -10,7 +10,7 @@ Run `pnpm test` to verify every test named here.
 
 | Req ID | Requirement | Implementation | Test | Status |
 | --- | --- | --- | --- | --- |
-| CR-1 | Patient Information Intake | `lib/clarify/questions.ts`, `components/medical/StructuredRecord.tsx` (Patient information section) | `asks for age when absent`, `asks for sex when absent` | Partial — report text only, no structured patient form |
+| CR-1 | Patient Information Intake | `components/medical/IntakeForm.tsx` -> `lib/intake/schema.ts` -> `lib/intake/present.ts` | `marks every intake field as user_provided`, `fires the allergy contradiction when intake claims none but the document names one`, `describes the field with its error message` | Done |
 | CR-2 | Medical Report Processing | `components/medical/ReportAnalyzer.tsx` → `app/api/analyze/route.ts` → `lib/server/extraction/pipeline.ts` | `renders the result after a successful submission`, `evaluates status from the genuine printed range` | Done |
 | CR-3 | Structured Medical Record | `components/medical/StructuredRecord.tsx`, `lib/domain/types.ts` | `gives every section an accessible name`, `shows the unverifiable field in the quarantine region only` | Done |
 | CR-4 | Reference-Range Awareness | `lib/ranges/evaluate.ts` | `treats the lower bound as inclusive`, `returns no_reference_in_source when the range is null`, `returns unit_mismatch and refuses to compare when units differ` (46 tests) | Done |
@@ -18,11 +18,13 @@ Run `pnpm test` to verify every test named here.
 | CR-6 | AI-Powered Summary | `components/medical/SummarySection.tsx` ← `app/api/analyze/route.ts` ← `lib/server/ai/summary.ts`, `lib/server/ai/guardrail.ts` | `renders the summary section when the server returns one`, `says visibly when the guardrail fired`, `falls back to the template when both attempts break rules` | Done |
 
 **On the qualified rows.** CR-2 is now genuinely Done: a user can paste a report and the
-UI reaches the real pipeline. CR-6 is now Done: the guardrailed summary is rendered, badged
-`ai_generated`, and a fired guardrail is stated visibly rather than hidden. CR-1 stays
-Partial because only report text can be submitted — there is no form for age, sex, symptoms
-or medications, so intake is inferred from the document rather than entered. Marking it Done
-would overstate what a user can actually do.
+UI reaches the real pipeline. CR-6 is Done: the guardrailed summary is rendered, badged
+`ai_generated`, and a fired guardrail is stated visibly rather than hidden. CR-1 is Done:
+identifier, age, sex, symptoms with durations, conditions, allergies, medications and notes
+are entered through a validated form, stored `user_provided`, and fed into both conflict
+detection and clarification.
+
+All six core requirements now have a UI path that reaches the code behind them.
 
 ## Supporting modules
 
@@ -36,6 +38,9 @@ would overstate what a user can actually do.
 | `lib/server/ai/provider.ts` | Gemini wrapper, sha256 cache, one retry | `serves an identical request from cache at zero cost` | 15 |
 | `lib/server/extraction/fallback.ts` | Pattern extraction when no API key is set | `produces a verified, evaluated record without any model call` | 10 |
 | `components/medical/ReportAnalyzer.tsx` | Paste form, previous-report field, error states, mode disclosure | `says no AI was used when the server reports the pattern fallback`, `sends the previous report to the server` | 21 |
+| `lib/intake/schema.ts` | Shared client+server intake validation | `rejects listing an allergy while also claiming none are known` | 21 |
+| `components/medical/IntakeForm.tsx` | Accessible intake form | `describes the field with its error message` | 20 |
+| `lib/intake/present.ts` | Intake -> Provenanced user_provided fields | `marks every intake field as user_provided` | (in schema tests) |
 | `lib/env.ts` | Zod-validated environment | `never echoes the key value in the error message` | 10 |
 
 ## Engineering invariants
@@ -60,5 +65,5 @@ What enforces each rule from `CLAUDE.md`. "Enforced by" means a tool fails the b
 ## Not built
 
 Deliberate absences: file upload (paste only), persistence of any kind, authentication and
-access control, PDF export, deployment, and a structured intake form. See the README's *Future work* section. Nothing in this
+access control, PDF export, and deployment. See the README's *Future work* section. Nothing in this
 repository claims otherwise.

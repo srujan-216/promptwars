@@ -4,6 +4,7 @@ import { useId, useRef, useState, type FormEvent, type ReactElement } from 'reac
 import { z } from 'zod';
 
 import { ComparisonTable } from '@/components/medical/ComparisonTable';
+import { IntakeForm } from '@/components/medical/IntakeForm';
 import { IntegrityPanel } from '@/components/medical/IntegrityPanel';
 import { QuarantineSection } from '@/components/medical/QuarantineSection';
 import { SummarySection, type SummaryView } from '@/components/medical/SummarySection';
@@ -11,6 +12,7 @@ import { StructuredRecord, type RecordData } from '@/components/medical/Structur
 import type { QuarantinedItem } from '@/components/medical/QuarantineSection';
 import { Button } from '@/components/ui/button';
 import type { ComparedRow } from '@/lib/compare/diff';
+import { EMPTY_INTAKE, intakeSchema, type Intake } from '@/lib/intake/schema';
 import type { AuditReport } from '@/lib/verification/audit';
 
 /**
@@ -61,6 +63,9 @@ export function ReportAnalyzer({ exampleDocument }: { exampleDocument: string })
 
   const [text, setText] = useState('');
   const [previousText, setPreviousText] = useState('');
+  const [intake, setIntake] = useState<Intake>(EMPTY_INTAKE);
+  const [intakeErrors, setIntakeErrors] = useState<Record<string, string>>({});
+  const fieldIds = useRef<Record<string, string>>({});
   const [status, setStatus] = useState<'idle' | 'working'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
@@ -70,10 +75,33 @@ export function ReportAnalyzer({ exampleDocument }: { exampleDocument: string })
 
     if (text.trim() === '') {
       setError('Paste a report before processing.');
+      setIntakeErrors({});
       setResult(null);
       textareaRef.current?.focus();
       return;
     }
+
+    // Same schema the server re-runs. Failing here is a courtesy; the server decides.
+    const validatedIntake = intakeSchema.safeParse(intake);
+    if (!validatedIntake.success) {
+      const collected: Record<string, string> = {};
+      for (const issue of validatedIntake.error.issues) {
+        const path = issue.path.join('.');
+        collected[path] ??= issue.message;
+      }
+      setIntakeErrors(collected);
+      setError('Some details need correcting before this can be processed.');
+      setResult(null);
+
+      const firstPath = Object.keys(collected)[0];
+      const firstId = firstPath === undefined ? undefined : fieldIds.current[firstPath];
+      if (firstId !== undefined) {
+        document.getElementById(firstId)?.focus();
+      }
+      return;
+    }
+
+    setIntakeErrors({});
 
     setStatus('working');
     setError(null);
@@ -82,7 +110,11 @@ export function ReportAnalyzer({ exampleDocument }: { exampleDocument: string })
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ documentText: text, previousDocumentText: previousText }),
+        body: JSON.stringify({
+          documentText: text,
+          previousDocumentText: previousText,
+          intake: validatedIntake.data,
+        }),
       });
 
       const payload: unknown = await response.json();
@@ -159,6 +191,15 @@ export function ReportAnalyzer({ exampleDocument }: { exampleDocument: string })
               <span>{error}</span>
             </p>
           )}
+
+          <IntakeForm
+            value={intake}
+            onChange={setIntake}
+            errors={intakeErrors}
+            onRegisterFieldId={(path, id) => {
+              fieldIds.current[path] = id;
+            }}
+          />
 
           <label htmlFor={previousTextareaId} className="mt-2 text-sm font-medium text-slate-700">
             Previous report (optional)

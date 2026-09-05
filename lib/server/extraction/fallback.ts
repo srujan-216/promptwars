@@ -46,8 +46,24 @@ function splitValueAndUnit(cell: string): { value: number; unit: string | null }
   return { value, unit: unit === '' ? null : unit };
 }
 
+/** "Allergies: penicillin, latex" or "Medications   Metformin; Aspirin" -> the list. */
+function parseLabelledList(line: string, label: RegExp): string[] | null {
+  const match = label.exec(line);
+  if (match === null) return null;
+  return line
+    .slice(match[0].length)
+    .split(/[,;]|\s{2,}/)
+    .map((item) => item.trim())
+    .filter((item) => item !== '' && !/^(none|nil|n\/a|not known)$/i.test(item));
+}
+
+const ALLERGY_LABEL = /^allergies?\s*[::]?\s*/i;
+const MEDICATION_LABEL = /^(?:current\s+)?medications?\s*[::]?\s*/i;
+
 export function parseReportText(documentText: string): ExtractionResponse {
   const labs: ExtractionResponse['labs'] = [];
+  const medications: string[] = [];
+  const allergies: string[] = [];
   let reportDate: string | null = null;
 
   for (const rawLine of documentText.split(/\r?\n/)) {
@@ -57,6 +73,20 @@ export function parseReportText(documentText: string): ExtractionResponse {
     const dateMatch = /report\s*date\s*[::]\s*(\d{4}-\d{2}-\d{2})/i.exec(line);
     if (dateMatch?.[1] !== undefined) {
       reportDate = dateMatch[1];
+      continue;
+    }
+
+    // Labelled lists come before the table parse, since "Allergies  Penicillin" is
+    // column-shaped but is not a measurement.
+    const allergyList = parseLabelledList(line, ALLERGY_LABEL);
+    if (allergyList !== null) {
+      allergies.push(...allergyList);
+      continue;
+    }
+
+    const medicationList = parseLabelledList(line, MEDICATION_LABEL);
+    if (medicationList !== null) {
+      medications.push(...medicationList);
       continue;
     }
 
@@ -89,7 +119,7 @@ export function parseReportText(documentText: string): ExtractionResponse {
     });
   }
 
-  return { patient: { age: null, sex: null, reportDate }, labs, medications: [], allergies: [] };
+  return { patient: { age: null, sex: null, reportDate }, labs, medications, allergies };
 }
 
 /**

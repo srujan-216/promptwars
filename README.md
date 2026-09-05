@@ -24,6 +24,13 @@ Paste a lab report into the form and press **Process report**. The text goes to
 `app/api/analyze/route.ts`, which Zod-validates it (100,000 character cap) and runs the
 real pipeline.
 
+Fill in the optional **About the patient** form — identifier, age, sex, symptoms with
+durations, conditions, allergies, medications, notes. Everything entered is stored with
+`origin: 'user_provided'` and badged as such in the record, so a reader can tell at a glance
+which values a person supplied and which a model read out of the document. Intake also feeds
+the deterministic rules: claiming "no known allergies" while the report names one raises a
+conflict, and a symptom with no duration produces a clarification question.
+
 Paste an earlier report into the optional **Previous report** field and a comparison table
 appears — Parameter, Previous, Current, Change. Both reports go through the same pipeline,
 so a comparison is never drawn against unverified values. Rows are matched on canonical
@@ -94,7 +101,7 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 
 ## Tests
 
-342 tests, all passing.
+395 tests, all passing.
 
 | Module | Tests |
 | --- | --- |
@@ -109,6 +116,9 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 | `components/medical/ReportAnalyzer.tsx` | 26 |
 | `components/medical/ComparisonTable.tsx` | 14 |
 | `components/medical/SummarySection.tsx` | 14 |
+| `lib/intake/schema.ts` + `present.ts` | 21 |
+| `components/medical/IntakeForm.tsx` | 20 |
+| `lib/intake` pipeline integration | 9 |
 | `lib/server/ai/provider.ts` | 15 |
 | `lib/server/extraction/pipeline.ts` | 14 |
 | `lib/server/extraction/fallback.ts` | 10 |
@@ -167,9 +177,6 @@ None of the following exists in this repository. Listed so their absence is a de
 rather than an oversight.
 
 - **File upload.** Paste only. There is no PDF, image or file input, and no OCR.
-- **Structured intake form.** Only report text can be submitted. Age, sex, symptoms and
-  medications cannot be entered; they are read from the document if present, which is why
-  CR-1 is marked Partial in `docs/TRACEABILITY.md`.
 - **Persistence.** Nothing is stored. There is no database and no in-memory store — a
   reload rebuilds the sample from source. Records do not survive anything.
 - **Authentication and access control.** None. There are no users and no patient records
