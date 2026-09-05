@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resetProviders } from '@/lib/server/ai/providerRegistry';
+import { analyzeRateLimiter } from '@/lib/server/rateLimit';
 
 /**
  * The route handler, exercised THROUGH rather than around.
@@ -37,6 +38,7 @@ async function json(response: Response): Promise<Record<string, unknown>> {
 beforeEach(() => {
   delete process.env['GEMINI_API_KEY'];
   resetProviders();
+  analyzeRateLimiter.reset();
 });
 
 afterEach(() => {
@@ -310,5 +312,86 @@ describe('POST /api/analyze — a cached fallback result never serves a Gemini r
     expect(gemini.mode).toBe('gemini');
     expect(gemini.provider).not.toBe(fallback.provider);
     expect(gemini.provider.cacheSize()).toBe(0);
+  });
+});
+
+describe('POST /api/analyze — rate limiting', () => {
+  it('allows requests up to the limit', async () => {
+    const { POST } = await import('./route');
+
+    for (let i = 0; i < 10; i += 1) {
+      const response = await POST(post({ documentText: REPORT }));
+      expect(response.status).toBe(200);
+    }
+  });
+
+  it('returns 429 once the limit is exceeded', async () => {
+    const { POST } = await import('./route');
+    const { analyzeRateLimiter: limiter } = await import('@/lib/server/rateLimit');
+    limiter.reset();
+
+    for (let i = 0; i < 10; i += 1) await POST(post({ documentText: REPORT }));
+    const blocked = await POST(post({ documentText: REPORT }));
+
+    expect(blocked.status).toBe(429);
+  });
+
+  it('sets Retry-After so a client knows when to come back', async () => {
+    const { POST } = await import('./route');
+    const { analyzeRateLimiter: limiter } = await import('@/lib/server/rateLimit');
+    limiter.reset();
+
+    for (let i = 0; i < 10; i += 1) await POST(post({ documentText: REPORT }));
+    const blocked = await POST(post({ documentText: REPORT }));
+
+    expect(Number(blocked.headers.get('retry-after'))).toBeGreaterThan(0);
+  });
+
+  it('gives a plain-language message, not a stack trace', async () => {
+    const { POST } = await import('./route');
+    const { analyzeRateLimiter: limiter } = await import('@/lib/server/rateLimit');
+    limiter.reset();
+
+    for (let i = 0; i < 10; i += 1) await POST(post({ documentText: REPORT }));
+    const body = await json(await POST(post({ documentText: REPORT })));
+
+    expect(body['error']).toBe('Too many requests. Please wait a moment and try again.');
+  });
+
+  it('limits per client, so one caller cannot lock out another', async () => {
+    const { POST } = await import('./route');
+    const { analyzeRateLimiter: limiter } = await import('@/lib/server/rateLimit');
+    limiter.reset();
+
+    const noisy = (): Request =>
+      new Request('http://localhost/api/analyze', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-forwarded-for': '1.1.1.1' },
+        body: JSON.stringify({ documentText: REPORT }),
+      });
+
+    for (let i = 0; i < 11; i += 1) await POST(noisy());
+
+    const other = new Request('http://localhost/api/analyze', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-forwarded-for': '2.2.2.2' },
+      body: JSON.stringify({ documentText: REPORT }),
+    });
+
+    expect((await POST(other)).status).toBe(200);
+  });
+
+  it('rejects before parsing the body, so a blocked request costs nothing', async () => {
+    const { POST } = await import('./route');
+    const { analyzeRateLimiter: limiter } = await import('@/lib/server/rateLimit');
+    limiter.reset();
+
+    for (let i = 0; i < 10; i += 1) await POST(post({ documentText: REPORT }));
+
+    // Malformed body that would otherwise 400: the 429 must win, proving the limiter
+    // runs first and an abusive caller cannot make us do parsing work.
+    const blocked = await POST(post(null, 'not json at all'));
+
+    expect(blocked.status).toBe(429);
   });
 });

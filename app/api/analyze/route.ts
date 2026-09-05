@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { getProvider } from '@/lib/server/ai/providerRegistry';
+import { analyzeRateLimiter, identifyClient } from '@/lib/server/rateLimit';
 import { PipelineError, runExtractionPipeline } from '@/lib/server/extraction/pipeline';
 import { intakeForPipeline, intakeToSections } from '@/lib/intake/present';
 import { EMPTY_INTAKE, intakeSchema } from '@/lib/intake/schema';
@@ -42,6 +43,21 @@ const requestSchema = z.object({
 export type AnalyzeMode = 'gemini' | 'pattern_fallback';
 
 export async function POST(request: Request): Promise<Response> {
+  // Before parsing the body: a rejected request should cost as little as possible.
+  const limit = analyzeRateLimiter.check(identifyClient(request));
+  if (!limit.allowed) {
+    return Response.json(
+      { error: 'Too many requests. Please wait a moment and try again.' },
+      {
+        status: 429,
+        headers: {
+          'retry-after': String(limit.retryAfterSeconds),
+          'x-ratelimit-remaining': '0',
+        },
+      },
+    );
+  }
+
   let body: unknown;
   try {
     body = await request.json();

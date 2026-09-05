@@ -146,11 +146,29 @@ client component importing server code still fails the build. The alias exists s
 that `pipeline.ts`, `provider.ts` and `guardrail.ts` are testable, which is what gives them
 63 tests.
 
+## Rate limiting
+
+`/api/analyze` can spend money, so on a public deployment an unthrottled endpoint lets
+anyone burn the Gemini quota. [`lib/server/rateLimit.ts`](../lib/server/rateLimit.ts) applies
+an in-memory token bucket: **10 requests per minute per client**, checked *before* the body
+is parsed so a blocked request costs nothing. Exceeding it returns `429` with `Retry-After`.
+
+**What it does not do**, stated rather than left to be discovered:
+
+- It is **per instance**. Serverless runs many, each with its own buckets, so the effective
+  global limit is roughly *(limit × instances)*, and a cold start resets every bucket.
+- The identifier comes from `x-forwarded-for`, which a client can **forge**. That is inherent
+  to IP-based limiting behind a proxy, not something application code fixes.
+- A distributed attacker, or one who keeps triggering cold starts, is not stopped.
+
+So it is a speed bump against casual abuse and accidental loops — **not a security control**.
+A real limit needs shared state (Redis, Upstash, or the platform gateway) and is not built.
+
 ## Not implemented
 
 - **Authentication and access control.** None. There are no accounts and no stored records.
   Any deployment serving real patient data would need both before anything else here matters.
-- **Rate limiting and abuse controls.** None.
+- **Distributed rate limiting.** Only the per-instance bucket above.
 - **Audit logging.** None — and it cannot be added until `redact()` exists.
 - **Transport and storage encryption.** Not applicable: nothing is stored and nothing is
   deployed.
