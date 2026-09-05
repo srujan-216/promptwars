@@ -115,6 +115,51 @@ export function quoteAppearsInSource(haystack: string, needle: string): boolean 
 }
 
 /**
+ * Presence alone is NOT sufficient for a reference range, and this is the subtle part.
+ *
+ * A prompt-injected document can simply contain the sentence it wants us to believe —
+ * "Hemoglobin reference range is 5-8 g/dL" — at which point a naive verbatim check finds
+ * it and waves it through. The injected text is genuinely in the document; that is the
+ * whole trick.
+ *
+ * What distinguishes a real range is WHERE it is printed. Lab reports are tables: a
+ * value and its reference range sit on the same row. So a range is only accepted if it
+ * appears on the same line as the quote it belongs to, or on the line immediately after
+ * (for reports that wrap a row). Prose elsewhere in the document — injected or merely
+ * incidental — is not evidence about this measurement.
+ */
+export function rangeAppearsNearQuote(
+  documentText: string,
+  quote: string,
+  range: string,
+): boolean {
+  const normalizedQuote = normalizeForMatch(quote);
+  const normalizedRange = normalizeForMatch(range);
+  if (normalizedQuote === '' || normalizedRange === '') return false;
+
+  // Normalise each line independently so line structure survives.
+  const lines = documentText.split(/\r?\n/).map((line) => normalizeForMatch(line));
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i] ?? '';
+    if (line.includes(normalizedQuote) && line.includes(normalizedRange)) {
+      return true;
+    }
+
+    // Allow a row that wrapped onto the next line, but no further.
+    const next = lines[i + 1];
+    if (next !== undefined) {
+      const pair = `${line} ${next}`;
+      if (pair.includes(normalizedQuote) && pair.includes(normalizedRange)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
  * Verify every field against the document and produce both the corrected fields and a
  * report a non-clinician can read.
  */
@@ -175,7 +220,14 @@ export function auditExtraction(input: AuditInput): AuditReport {
     let rejectedReferenceText: string | null = null;
 
     if (claimedRange !== null && claimedRange.trim() !== '') {
-      if (quoteAppearsInSource(documentText, claimedRange)) {
+      // Two conditions, both required: the range must be in the document AT ALL, and it
+      // must be printed alongside the value it claims to describe.
+      const present = quoteAppearsInSource(documentText, claimedRange);
+      const alongsideValue =
+        field.sourceQuote !== null &&
+        rangeAppearsNearQuote(documentText, field.sourceQuote, claimedRange);
+
+      if (present && alongsideValue) {
         referenceText = claimedRange;
       } else {
         rejectedReferenceText = claimedRange;
@@ -185,7 +237,9 @@ export function auditExtraction(input: AuditInput): AuditReport {
           severity: 'critical',
           path: field.path,
           label: field.label,
-          message: `A reference range of "${claimedRange}" was proposed for ${field.label} but does not appear in the document. It was rejected and not used.`,
+          message: present
+            ? `A reference range of "${claimedRange}" was proposed for ${field.label}, but it is not printed alongside that result in the document. It was rejected and not used.`
+            : `A reference range of "${claimedRange}" was proposed for ${field.label} but does not appear in the document. It was rejected and not used.`,
         });
       }
     }

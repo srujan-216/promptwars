@@ -40,15 +40,25 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/ban-ts-comment': 'error',
       '@typescript-eslint/consistent-type-imports': 'warn',
-      // CLAUDE.md convention: server-only code must never reach a client component.
+    },
+  },
+
+  // CLAUDE.md rule 12 / conventions: server-only code must never reach a client
+  // component. Scoped to components/, where client components live — server code
+  // importing server code is normal and must stay allowed, as must route handlers
+  // under app/api. The `server-only` package is the real mechanical guard (it makes
+  // such an import a build error); this rule is a faster, more legible second line.
+  {
+    files: ['components/**/*.{ts,tsx}'],
+    rules: {
       'no-restricted-imports': [
         'error',
         {
           patterns: [
             {
-              group: ['@/lib/server/*'],
+              group: ['@/lib/server/*', '@/lib/server/**'],
               message:
-                'Server-only modules must not be imported from client code. Import them from a server component or route handler.',
+                'Server-only modules must not be imported from a client component. Pass the data in as props from a server component instead.',
             },
           ],
         },
