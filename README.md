@@ -294,7 +294,18 @@ than falling back to a placeholder.
 None of the following exists in this repository. Listed so their absence is a decision
 rather than an oversight.
 
-- **File upload.** Paste only. There is no PDF, image or file input, and no OCR.
+- **File upload.** Paste only. There is no PDF, image or file input, and no OCR. This is
+  the largest gap against "Medical Report Processing" as most people would read it, and it
+  was deliberately not attempted late in the build: it needs a parsing dependency, and
+  adding one under time pressure risked the green build for an uncertain gain.
+- **`strictTypeChecked` lint.** The config runs `recommendedTypeChecked`, with
+  `no-explicit-any` and `ban-ts-comment` raised to `error` so the non-negotiable is still
+  mechanically enforced. Tightening the rest was judged too likely to cascade across 34 test
+  files to attempt near the end. Stated in `eslint.config.mjs` as well.
+- **A real Zod schema for the API response.** `ReportAnalyzer` validates the response with
+  `z.custom` structural checks rather than a full schema. It is a runtime predicate, not a
+  cast — but it is weaker than the boundary validation used everywhere else, and it is the
+  one place rule 1 is honoured in spirit more than in letter.
 - **Persistence.** Nothing is stored. There is no database and no in-memory store — a
   reload rebuilds the sample from source. Records do not survive anything.
 - **Authentication and access control.** None. There are no users and no patient records
