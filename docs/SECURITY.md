@@ -146,6 +146,33 @@ client component importing server code still fails the build. The alias exists s
 that `pipeline.ts`, `provider.ts` and `guardrail.ts` are testable, which is what gives them
 63 tests.
 
+## Security headers
+
+Set in [`next.config.ts`](../next.config.ts) on every route:
+
+| Header | Value | Why |
+| --- | --- | --- |
+| `Content-Security-Policy` | see below | The app renders text a user pasted. React escapes it; the CSP means a hypothetical escaping bug cannot become script execution. |
+| `X-Frame-Options` | `DENY` | Clickjacking. Redundant with `frame-ancestors` on modern browsers, kept for older ones. |
+| `X-Content-Type-Options` | `nosniff` | No MIME sniffing. |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | A pasted-report URL should not leak in full to other origins. |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | Nothing here needs them. |
+
+The policy is `default-src 'self'` with `frame-ancestors 'none'`, `object-src 'none'`,
+`base-uri 'self'`, `form-action 'self'` and `connect-src 'self'` — the browser makes no
+outbound calls, because the only network call is server-side to Gemini.
+
+**Two honest caveats.** `style-src` allows `'unsafe-inline'`, which is required by Next's
+injected styles and Tailwind's runtime. And `script-src` allows `'unsafe-eval'` **in
+development only**, for React Fast Refresh; the production policy does not, and
+`does not allow unsafe-eval in production` asserts that. Both are stated here rather than
+left for a reviewer to find and wonder about.
+
+These are asserted in [`lib/server/securityHeaders.test.ts`](../lib/server/securityHeaders.test.ts),
+which checks the shape of the policy, not that a browser enforces it — that needs a real
+browser. What the tests catch is the realistic regression: someone loosening a directive to
+make something work, and nobody noticing.
+
 ## Rate limiting
 
 `/api/analyze` can spend money, so on a public deployment an unthrottled endpoint lets
