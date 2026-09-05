@@ -49,6 +49,8 @@ All six core requirements now have a UI path that reaches the code behind them.
 | `lib/intake/schema.ts` | Shared client+server intake validation | `rejects listing an allergy while also claiming none are known` | 21 |
 | `components/medical/IntakeForm.tsx` | Accessible intake form | `describes the field with its error message` | 23 |
 | `lib/intake/present.ts` | Intake -> Provenanced user_provided fields | `marks every intake field as user_provided` | (in schema tests) |
+| `app/api/analyze/route.ts` | The HTTP boundary, tested through | `serves the second submission from cache`, `surfaces a model failure as 422, not 500` | 20 |
+| `lib/server/ai/providerRegistry.ts` | Module-scoped provider cache | `serves a second request from the cache the first request populated` | 8 |
 | `lib/env.ts` | Zod-validated environment | `never echoes the key value in the error message` | 10 |
 | `lib/server/ai/keyExposure.test.ts` | CI guard against leaking the key to the client | `never exposes the key through a NEXT_PUBLIC_ variable` | 6 |
 

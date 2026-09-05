@@ -5,7 +5,7 @@
 > `rangeAppearsNearQuote` — and the test that proves it,
 > `rejects_prompt_injected_reference_range` in
 > [`lib/server/extraction/pipeline.test.ts`](lib/server/extraction/pipeline.test.ts).
-> **Run:** `pnpm install && pnpm verify` — typecheck, lint, 532 tests, build. No API key needed.
+> **Run:** `pnpm install && pnpm verify` — typecheck, lint, 552 tests, build. No API key needed.
 > **Live:** not yet deployed.
 
 Most AI medical tools ask you to trust the model. MedLens verifies it. Every extracted
@@ -185,7 +185,7 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 
 ## Tests
 
-532 tests, all passing.
+552 tests, all passing.
 
 | Module | Tests |
 | --- | --- |
@@ -212,6 +212,7 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 | `lib/intake` pipeline integration | 9 |
 | `lib/server/ai/provider.ts` | 18 |
 | `lib/server/ai/providerRegistry.ts` | 8 |
+| `app/api/analyze/route.ts` (handler, end to end) | 20 |
 | `lib/server/extraction/pipeline.ts` | 14 |
 | `lib/server/extraction/fallback.ts` | 10 |
 | `lib/env.ts` | 10 |
