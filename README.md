@@ -1,5 +1,13 @@
 # MedLens — Clinical Information Intelligence
 
+> **Start here.**
+> **Read:** [`lib/verification/audit.ts`](lib/verification/audit.ts) — specifically
+> `rangeAppearsNearQuote` — and the test that proves it,
+> `rejects_prompt_injected_reference_range` in
+> [`lib/server/extraction/pipeline.test.ts`](lib/server/extraction/pipeline.test.ts).
+> **Run:** `pnpm install && pnpm verify` — typecheck, lint, 521 tests, build. No API key needed.
+> **Live:** not yet deployed.
+
 Most AI medical tools ask you to trust the model. MedLens verifies it. Every extracted
 field is matched against its source text; unmatched fields are quarantined, not displayed
 as fact. Every reference range must appear in the document **and be positionally adjacent
