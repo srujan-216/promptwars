@@ -37,6 +37,7 @@ All six core requirements now have a UI path that reaches the code behind them.
 | `components/medical/SummarySection.tsx` | Renders the summary; shows a fired guardrail | `does not badge the deterministic template as AI-written` | 14 |
 | `components/medical/ConflictsSection.tsx` | Renders flagged contradictions | `says it flags contradictions rather than resolving them` | (in page tests) |
 | `components/medical/QuestionsSection.tsx` | Renders clarification questions | `renders clarification questions` | (in page tests) |
+| `lib/view/filter.ts` + `components/medical/LabResultsSection.tsx` | Search and status filter over results | `finds a row by the name the report printed`, `says when nothing matches, without implying the record is empty` | 35 |
 | `components/medical/PrintButton.tsx` + `app/globals.css` | Print-to-PDF via the browser pipeline | `keeps the quarantine section, still separate and still labelled`, `prints the status word, not just a colour` | 15 |
 | `components/medical/SourceView.tsx` | Side-by-side source and fields; keyboard-operable highlight | `activates the highlight with Enter`, `says explicitly that there is nothing to highlight` | 19 |
 | `lib/view/highlight.ts` | Locates a quote in the source, with the verifier's exact tolerance | `agrees for %j` (highlighting agrees with verification) | 14 |

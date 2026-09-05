@@ -141,7 +141,7 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 
 ## Tests
 
-469 tests, all passing.
+504 tests, all passing.
 
 | Module | Tests |
 | --- | --- |
@@ -154,6 +154,8 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 | `app/page.tsx` (incl. axe) | 25 |
 | `components/medical/SourceView.tsx` | 19 |
 | print contract (`app/print.test.tsx`) | 15 |
+| `lib/view/filter.ts` | 22 |
+| `components/medical/LabResultsSection.tsx` | 13 |
 | `lib/view/highlight.ts` | 14 |
 | `lib/sample/example.ts` (fixture honesty) | 13 |
 | `lib/clarify/questions.ts` | 18 |
