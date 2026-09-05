@@ -89,6 +89,16 @@ counts, summary, conflicts, questions, record and the separate quarantine sectio
 survive, and every origin and status badge carries icon + text so a greyscale printer loses
 nothing. `app/print.test.tsx` asserts that contract structurally.
 
+**Search and filter.** Results can be searched by name and filtered by status. Search runs
+over the standardised name as well as the printed one, so typing "PLT" finds the row shown
+as "Platelet Count". Filtering never removes anything from the record — filtering to nothing
+says so and states how many results are still there.
+
+**Confidence.** Every field carries the model's self-reported confidence as icon + text.
+It is explicitly *not* a probability the value is correct and *not* verification — a field
+can be high-confidence and quarantined. Its low threshold matches the audit's, so a field
+flagged in the integrity panel never reads "medium" in the table.
+
 **Side by side.** The document sits next to the extracted fields; selecting a field
 highlights the exact text it came from. Selecting the quarantined field highlights nothing
 and says so — you can see the quoted text is genuinely absent rather than being told. The
@@ -103,8 +113,7 @@ other pane. Tested with `activates the highlight with Enter` and `... with Space
 ## Pipeline
 
 Each stage is a real file. Exactly one of the seven calls a model; the other six are pure
-functions. (A submission that includes a previous report runs this pipeline twice — once
-per document — so it makes two calls, not one.)
+functions.
 
 | # | Stage | File | Kind |
 | --- | --- | --- | --- |
@@ -122,13 +131,31 @@ Guardrail ([`lib/server/ai/guardrail.ts`](lib/server/ai/guardrail.ts)) and compa
 Order matters: **verification runs before range analysis**, so a rejected range is gone
 before anything tries to compare against it.
 
+**Model calls per submission**, stated exactly, because "one AI call" describes the pipeline
+and not the whole request:
+
+| What runs | Calls |
+| --- | --- |
+| The pipeline, per document | 1 |
+| A second document, when a previous report is supplied | +1 |
+| Summary generation, only when a key is configured | +1, or +2 if the guardrail rejects the first attempt |
+
+So a keyless submission makes **0**; a typical submission with a key makes **2**; the
+worst case — two documents and a rejected summary — makes **4**. Re-submitting anything
+already seen costs **0**, because the cache key covers the whole request.
+
+On top of that, `createProvider` retries once on a transient failure or malformed JSON, so
+a failing call can cost two. That is a failure path, not normal operation, and it is capped
+at one retry rather than backing off indefinitely.
+
 ## Efficiency
 
 Two claims, both asserted by tests rather than argued:
 
-- **One AI call, six deterministic stages, per document.** `makes exactly one AI call and
-  six deterministic stages` reads the pipeline trace and asserts the ratio directly. A
-  comparison submission processes two documents and so makes two calls.
+- **One AI call, six deterministic stages, inside the pipeline.** `makes exactly one AI
+  call and six deterministic stages` reads the pipeline trace and asserts the ratio
+  directly. Summary generation is a separate stage outside that count — see the table
+  above for calls per submission.
 - **Re-submitting a document costs zero AI calls.** Requests are keyed by
   `sha256(model + systemInstruction + prompt + responseSchema)`. `costs zero model calls
   when the same document is submitted again` runs the full pipeline twice and asserts the
@@ -158,25 +185,29 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 | `components/medical/ConfidenceBadge.tsx` | 17 |
 | `components/medical/LabResultsSection.tsx` | 13 |
 | `lib/view/highlight.ts` | 14 |
-| `lib/sample/example.ts` (fixture honesty) | 13 |
+| `lib/sample/example.ts` (fixture honesty) | 14 |
 | `lib/clarify/questions.ts` | 18 |
 | `components/medical/ReportAnalyzer.tsx` | 26 |
 | `components/medical/ComparisonTable.tsx` | 14 |
 | `components/medical/SummarySection.tsx` | 14 |
 | `lib/intake/schema.ts` + `present.ts` | 21 |
-| `components/medical/IntakeForm.tsx` | 20 |
+| `components/medical/IntakeForm.tsx` | 23 |
 | `lib/intake` pipeline integration | 9 |
 | `lib/server/ai/provider.ts` | 15 |
 | `lib/server/extraction/pipeline.ts` | 14 |
 | `lib/server/extraction/fallback.ts` | 10 |
 | `lib/env.ts` | 10 |
+| `lib/server/ai/keyExposure.ts` (leak guard) | 6 |
 | `lib/server/ai/summary.ts` | 9 |
 | `app/api/health/route.ts` | 5 |
 | `components/ui/button.tsx` | 4 |
 
-Accessibility is tested, not asserted: axe-core reports zero violations on the full page,
-in the form's error state, after a successful submission, and again after a quarantined
-field is manually verified. `color-contrast` is explicitly
+Accessibility is tested, not asserted: axe-core reports zero violations on the full page
+and on every interactive component in each of its states — the form before and after
+submission and in its error state, the intake form with rows and errors, the source view
+before selection, with a highlight and in the not-found state, the summary in all four of
+its states, the results table including the no-match state, and the page again after a
+quarantined field is manually verified. `color-contrast` is explicitly
 **disabled** rather than silently skipped — it needs a real canvas, which jsdom does not
 provide — so contrast remains a manual check. See [Known gaps](#known-gaps).
 

@@ -42,14 +42,15 @@ All six core requirements now have a UI path that reaches the code behind them.
 | `components/medical/PrintButton.tsx` + `app/globals.css` | Print-to-PDF via the browser pipeline | `keeps the quarantine section, still separate and still labelled`, `prints the status word, not just a colour` | 15 |
 | `components/medical/SourceView.tsx` | Side-by-side source and fields; keyboard-operable highlight | `activates the highlight with Enter`, `says explicitly that there is nothing to highlight` | 19 |
 | `lib/view/highlight.ts` | Locates a quote in the source, with the verifier's exact tolerance | `agrees for %j` (highlighting agrees with verification) | 14 |
-| `lib/sample/example.ts` | Fixture-backed full result for the no-key path | `passes the real guardrail`, `every quoted sourceQuote that verified is genuinely in the document` | 13 |
+| `lib/sample/example.ts` | Fixture-backed full result for the no-key path | `passes the real guardrail`, `every quoted sourceQuote that verified is genuinely in the document` | 14 |
 | `lib/server/ai/provider.ts` | Gemini wrapper, sha256 cache, one retry | `serves an identical request from cache at zero cost` | 15 |
 | `lib/server/extraction/fallback.ts` | Pattern extraction when no API key is set | `produces a verified, evaluated record without any model call` | 10 |
-| `components/medical/ReportAnalyzer.tsx` | Paste form, previous-report field, error states, mode disclosure | `says no AI was used when the server reports the pattern fallback`, `sends the previous report to the server` | 21 |
+| `components/medical/ReportAnalyzer.tsx` | Paste form, previous-report field, error states, mode disclosure | `says no AI was used when the server reports the pattern fallback`, `sends the previous report to the server` | 26 |
 | `lib/intake/schema.ts` | Shared client+server intake validation | `rejects listing an allergy while also claiming none are known` | 21 |
-| `components/medical/IntakeForm.tsx` | Accessible intake form | `describes the field with its error message` | 20 |
+| `components/medical/IntakeForm.tsx` | Accessible intake form | `describes the field with its error message` | 23 |
 | `lib/intake/present.ts` | Intake -> Provenanced user_provided fields | `marks every intake field as user_provided` | (in schema tests) |
 | `lib/env.ts` | Zod-validated environment | `never echoes the key value in the error message` | 10 |
+| `lib/server/ai/keyExposure.test.ts` | CI guard against leaking the key to the client | `never exposes the key through a NEXT_PUBLIC_ variable` | 6 |
 
 ## Engineering invariants
 
