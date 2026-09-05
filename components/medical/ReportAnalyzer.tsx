@@ -4,6 +4,8 @@ import { useId, useRef, useState, type FormEvent, type ReactElement } from 'reac
 import { z } from 'zod';
 
 import { ComparisonTable } from '@/components/medical/ComparisonTable';
+import { ConflictsSection } from '@/components/medical/ConflictsSection';
+import { QuestionsSection } from '@/components/medical/QuestionsSection';
 import { IntakeForm } from '@/components/medical/IntakeForm';
 import { IntegrityPanel } from '@/components/medical/IntegrityPanel';
 import { QuarantineSection } from '@/components/medical/QuarantineSection';
@@ -11,7 +13,9 @@ import { SummarySection, type SummaryView } from '@/components/medical/SummarySe
 import { StructuredRecord, type RecordData } from '@/components/medical/StructuredRecord';
 import type { QuarantinedItem } from '@/components/medical/QuarantineSection';
 import { Button } from '@/components/ui/button';
+import type { ClarificationQuestion } from '@/lib/clarify/questions';
 import type { ComparedRow } from '@/lib/compare/diff';
+import type { Conflict } from '@/lib/conflicts/detect';
 import { EMPTY_INTAKE, intakeSchema, type Intake } from '@/lib/intake/schema';
 import type { AuditReport } from '@/lib/verification/audit';
 
@@ -32,6 +36,8 @@ export interface AnalyzeResponse {
   record: RecordData;
   quarantined: QuarantinedItem[];
   comparison: ComparedRow[];
+  conflicts: Conflict[];
+  questions: ClarificationQuestion[];
   summary: SummaryView | null;
   servedFromCache: boolean;
 }
@@ -51,6 +57,8 @@ const analyzeResponseSchema: z.ZodType<AnalyzeResponse> = z.object({
   record: objectLike<RecordData>(),
   quarantined: z.array(objectLike<QuarantinedItem>()),
   comparison: z.array(objectLike<ComparedRow>()),
+  conflicts: z.array(objectLike<Conflict>()),
+  questions: z.array(objectLike<ClarificationQuestion>()),
   summary: objectLike<SummaryView>().nullable(),
   servedFromCache: z.boolean(),
 });
@@ -270,6 +278,8 @@ export function ReportAnalyzer({ exampleDocument }: { exampleDocument: string })
 
           <IntegrityPanel audit={result.audit} summaryGenerated={result.summary !== null} />
           <SummarySection summary={result.summary} />
+          <ConflictsSection conflicts={result.conflicts} />
+          <QuestionsSection questions={result.questions} />
           <ComparisonTable rows={result.comparison} />
           <StructuredRecord data={result.record} />
           <QuarantineSection items={result.quarantined} />

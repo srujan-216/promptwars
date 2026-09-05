@@ -35,6 +35,9 @@ All six core requirements now have a UI path that reaches the code behind them.
 | `lib/compare/diff.ts` | Previous vs current report deltas | `describes the number only — direction carries no clinical meaning` | 19 |
 | `components/medical/ComparisonTable.tsx` | Renders the comparison; arithmetic framing only | `contains no language framing a change as good or bad` | 14 |
 | `components/medical/SummarySection.tsx` | Renders the summary; shows a fired guardrail | `does not badge the deterministic template as AI-written` | 14 |
+| `components/medical/ConflictsSection.tsx` | Renders flagged contradictions | `says it flags contradictions rather than resolving them` | (in page tests) |
+| `components/medical/QuestionsSection.tsx` | Renders clarification questions | `renders clarification questions` | (in page tests) |
+| `lib/sample/example.ts` | Fixture-backed full result for the no-key path | `passes the real guardrail`, `every quoted sourceQuote that verified is genuinely in the document` | 13 |
 | `lib/server/ai/provider.ts` | Gemini wrapper, sha256 cache, one retry | `serves an identical request from cache at zero cost` | 15 |
 | `lib/server/extraction/fallback.ts` | Pattern extraction when no API key is set | `produces a verified, evaluated record without any model call` | 10 |
 | `components/medical/ReportAnalyzer.tsx` | Paste form, previous-report field, error states, mode disclosure | `says no AI was used when the server reports the pattern fallback`, `sends the previous report to the server` | 21 |
@@ -59,7 +62,7 @@ What enforces each rule from `CLAUDE.md`. "Enforced by" means a tool fails the b
 | 8 | Never log PHI | Nothing logs. `redact()` does not exist — see `docs/SECURITY.md` | Partial |
 | 9 | Tests ship with their module | Convention; CI runs `pnpm test` | Active |
 | 10 | Status never by colour alone | `components/medical/StatusBadge.tsx` emits icon + text + colour; test `communicates status with text, not colour alone` | Active |
-| 11 | README never describes absent features | This file; tests `labels the worked example as synthetic with fixed AI output`, `says no AI call was made for the worked example`, `says no AI was used when the server reports the pattern fallback` | Active |
+| 11 | README never describes absent features | This file; tests `labels the worked example as synthetic with fixed AI output`, `states that only the model response is recorded`, `says no AI was used when the server reports the pattern fallback`, `passes the real guardrail` | Active |
 | 12 | API keys server-side only | `server-only` in `lib/server/**`; `getServerEnv()` never reaches a client bundle | Active |
 
 ## Not built

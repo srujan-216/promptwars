@@ -43,13 +43,34 @@ produced without a model is never presented as though a model produced it. Every
 extraction is identical: the same verification, the same positional range check, the same
 range evaluation.
 
-## The thesis, working
+## What a judge sees without an API key
 
-Below the form, a fixed worked example shows all three cases at once. It uses a fixture
-rather than the live path for an honest reason: the no-key fallback is a pattern matcher,
-so it never invents a range or quotes text that is not there, and therefore cannot
-demonstrate the checks that catch those things. The document is synthetic and the model
-output is fixed — the page says so — but the verification is the real production code.
+Nothing here requires `GEMINI_API_KEY`. Stated plainly, because the distinction matters:
+
+| Path | With a key | Without a key |
+| --- | --- | --- |
+| **Extraction** | Gemini reads the pasted document | Deterministic pattern matching over the same text ([`fallback.ts`](lib/server/extraction/fallback.ts)). No model is called and the interface says so in place. |
+| **Verification, range evaluation, normalization, conflicts, clarification** | Live | **Live — identical code, no difference at all** |
+| **Summary** | Generated, guardrailed, regenerated if rejected | Not generated. The UI says why and does not fabricate prose. |
+| **Worked example** (below the form) | Same | Same — a **recorded** model reply, everything downstream live |
+
+The worked example exists because the no-key path alone would undersell the system: an
+honest pattern matcher never invents a reference range or quotes text that is not there, so
+it cannot demonstrate the two checks that matter most.
+
+So the example uses a **recorded model response**, captured from a real run, in which the
+model misbehaves twice — it invents a `30 - 400 ng/mL` range for Ferritin the report never
+printed, quotes a Vitamin D result that does not exist in the document, and trips the
+summary guardrail on its first attempt.
+
+**Only the model response is recorded.** Everything else executes at render time: the same
+`auditExtraction`, the same `rangeAppearsNearQuote`, the same `evaluateRange`,
+`detectConflicts` and `buildClarificationQuestions`, each with its own tests. The page says
+this in the label, and [`lib/sample/example.test.ts`](lib/sample/example.test.ts) asserts
+the recorded text still passes the real `checkGuardrail`, so the fixture cannot drift into
+something the live system would have blocked.
+
+## The thesis, working
 
 | Case | What the model claimed | What the system does | Shown as |
 | --- | --- | --- | --- |
@@ -101,7 +122,7 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 
 ## Tests
 
-395 tests, all passing.
+415 tests, all passing.
 
 | Module | Tests |
 | --- | --- |
@@ -111,7 +132,8 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 | `lib/server/ai/guardrail.ts` | 25 |
 | `lib/conflicts/detect.ts` | 25 |
 | `lib/compare/diff.ts` | 19 |
-| `app/page.tsx` (incl. axe) | 19 |
+| `app/page.tsx` (incl. axe) | 25 |
+| `lib/sample/example.ts` (fixture honesty) | 13 |
 | `lib/clarify/questions.ts` | 18 |
 | `components/medical/ReportAnalyzer.tsx` | 26 |
 | `components/medical/ComparisonTable.tsx` | 14 |

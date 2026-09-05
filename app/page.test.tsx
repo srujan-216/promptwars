@@ -79,14 +79,21 @@ describe('HomePage — honesty about the sample', () => {
     render(<HomePage />);
 
     expect(
-      screen.getByText(/Worked example — synthetic data, fixed AI output/),
+      screen.getByText(/Worked example — recorded model response, everything else live/),
     ).toBeInTheDocument();
   });
 
-  it('says no AI call was made for the worked example', () => {
+  it('says the model reply is a recorded fixture', () => {
     render(<HomePage />);
 
-    expect(screen.getByText(/no AI call was made/)).toBeInTheDocument();
+    expect(screen.getByText(/recorded fixture/)).toBeInTheDocument();
+    expect(screen.getByText(/no model is called to render this page/)).toBeInTheDocument();
+  });
+
+  it('states that only the model response is recorded', () => {
+    render(<HomePage />);
+
+    expect(screen.getByText(/Only the model response is recorded/)).toBeInTheDocument();
   });
 });
 
@@ -197,5 +204,51 @@ describe('HomePage — manual verification', () => {
     await user.click(within(quarantine).getByRole('button', { name: 'Verify manually' }));
 
     expect(within(quarantine).getByText(/0 of 1 still awaiting review/)).toBeInTheDocument();
+  });
+});
+
+describe('HomePage — the worked example shows a complete result', () => {
+  it('renders the recorded summary with its guardrail state', () => {
+    render(<HomePage />);
+
+    const summary = screen.getByRole('region', { name: 'Summary' });
+    expect(within(summary).getByText(/Safety guardrail fired/)).toBeInTheDocument();
+    expect(within(summary).getByText(/One generated summary was rejected/)).toBeInTheDocument();
+  });
+
+  it('renders the allergy contradiction', () => {
+    render(<HomePage />);
+
+    const conflicts = screen.getByRole('region', { name: /Contradictions found/i });
+    expect(within(conflicts).getByText(/no known allergies/i)).toBeInTheDocument();
+  });
+
+  it('says it flags contradictions rather than resolving them', () => {
+    render(<HomePage />);
+
+    const conflicts = screen.getByRole('region', { name: /Contradictions found/i });
+    expect(within(conflicts).getByText(/does not decide which side is right/)).toBeInTheDocument();
+  });
+
+  it('renders clarification questions', () => {
+    render(<HomePage />);
+
+    const questions = screen.getByRole('region', { name: /Questions that would improve/i });
+    expect(within(questions).getByText(/How long have you been experiencing fatigue\?/)).toBeInTheDocument();
+  });
+
+  it('shows every stage a judge needs to see without an API key', () => {
+    render(<HomePage />);
+
+    for (const name of [
+      /Extraction integrity/i,
+      /^Summary$/,
+      /Contradictions found/i,
+      /Questions that would improve/i,
+      /Structured record/i,
+      /Quarantined/i,
+    ]) {
+      expect(screen.getByRole('region', { name })).toBeInTheDocument();
+    }
   });
 });

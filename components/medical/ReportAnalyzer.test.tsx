@@ -37,6 +37,8 @@ const OK_RESPONSE = {
   },
   quarantined: [],
   comparison: [],
+  conflicts: [],
+  questions: [],
   summary: null,
 };
 
