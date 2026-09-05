@@ -22,8 +22,11 @@ Vitest + axe-core · Cloud Run (Block E, only if ahead)
    low/normal/high. No range in source → 'no_reference_in_source'. NEVER infer or
    recall a reference range from training data.
 3. HALLUCINATED RANGE REJECTION: any reference range the model emits must appear
-   VERBATIM in the source text. If not, discard it and force
-   'no_reference_in_source'. This is the most important check in the system.
+   verbatim in the source AND be positionally adjacent to its value's source
+   quote — same line, or the next line for wrapped table rows. Verbatim presence
+   alone is insufficient: injected prose is also 'present'. See
+   rangeAppearsNearQuote in lib/verification/audit.ts and the test
+   rejects_prompt_injected_reference_range.
 4. Every extracted field carries provenance. lib/verification/audit.ts
    string-matches every sourceQuote against the source. No match → the field is
    QUARANTINED, shown separately as unverified, never mixed with verified data.

@@ -1,45 +1,58 @@
 import type { ReactElement } from 'react';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AdviceBanner } from '@/components/medical/AdviceBanner';
+import { IntegrityPanel } from '@/components/medical/IntegrityPanel';
+import { QuarantineSection } from '@/components/medical/QuarantineSection';
+import { StructuredRecord } from '@/components/medical/StructuredRecord';
+import { buildSampleResult } from '@/lib/sample/example';
 
 export default function HomePage(): ReactElement {
+  const { audit, record, quarantined } = buildSampleResult();
+
   return (
-    <main className="mx-auto flex max-w-3xl flex-col gap-8 px-6 py-16">
-      <header className="flex flex-col gap-3">
-        <h1 className="text-3xl font-semibold tracking-tight">MedLens</h1>
-        <p className="text-lg text-slate-700">
-          Turn fragmented medical documents and patient-entered data into a structured, traceable,
-          reviewable patient record.
-        </p>
-      </header>
+    <>
+      <AdviceBanner />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Scope boundary</CardTitle>
-          <CardDescription>What this system does and does not do.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-slate-700">
-            MedLens extracts values, units and reference ranges from documents you provide, and
-            shows where every field came from. It does not diagnose, prescribe, or recommend
-            treatment, and it never infers a reference range that is absent from the source
-            document.
+      <main className="mx-auto flex max-w-4xl flex-col gap-8 px-6 py-10">
+        <header className="flex flex-col gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight">MedLens</h1>
+          <p className="max-w-prose text-lg text-slate-700">
+            Most AI medical tools ask you to trust the model. MedLens verifies it. Every extracted
+            field is matched against its source text, and every reference range is checked for
+            verbatim presence in the document.
           </p>
-        </CardContent>
-      </Card>
+        </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Phase 0</CardTitle>
-          <CardDescription>Project scaffold. No clinical features are implemented.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-slate-700">
-            See <code className="rounded bg-slate-100 px-1 py-0.5">docs/TRACEABILITY.md</code> for
-            the status of every requirement.
+        {/*
+          Honesty about what this page is. There is no upload form yet, so the interface is
+          rendered from a synthetic document with a fixed stand-in for model output. The
+          verification shown below is real: it is the production audit and range code running
+          over that input.
+        */}
+        <aside
+          aria-labelledby="sample-heading"
+          className="rounded-lg border-2 border-dashed border-slate-400 bg-white p-4"
+        >
+          <h2 id="sample-heading" className="text-sm font-semibold text-slate-900">
+            <span aria-hidden="true" className="mr-1.5">
+              ⓘ
+            </span>
+            Worked example — synthetic data
+          </h2>
+          <p className="mt-1.5 max-w-prose text-sm text-slate-700">
+            This is not a real patient, and no AI call was made to produce it. The document is
+            fabricated and the model output is a fixture. What runs for real is the verification:
+            the figures and findings below come from the same code that would check a live
+            extraction. Document upload is not built yet.
           </p>
-        </CardContent>
-      </Card>
-    </main>
+        </aside>
+
+        <IntegrityPanel audit={audit} />
+
+        <StructuredRecord data={record} />
+
+        <QuarantineSection items={quarantined} />
+      </main>
+    </>
   );
 }
