@@ -3,11 +3,13 @@
 import { useId, useRef, useState, type FormEvent, type ReactElement } from 'react';
 import { z } from 'zod';
 
+import { ComparisonTable } from '@/components/medical/ComparisonTable';
 import { IntegrityPanel } from '@/components/medical/IntegrityPanel';
 import { QuarantineSection } from '@/components/medical/QuarantineSection';
 import { StructuredRecord, type RecordData } from '@/components/medical/StructuredRecord';
 import type { QuarantinedItem } from '@/components/medical/QuarantineSection';
 import { Button } from '@/components/ui/button';
+import type { ComparedRow } from '@/lib/compare/diff';
 import type { AuditReport } from '@/lib/verification/audit';
 
 /**
@@ -26,6 +28,7 @@ export interface AnalyzeResponse {
   audit: AuditReport;
   record: RecordData;
   quarantined: QuarantinedItem[];
+  comparison: ComparedRow[];
   servedFromCache: boolean;
 }
 
@@ -43,15 +46,18 @@ const analyzeResponseSchema: z.ZodType<AnalyzeResponse> = z.object({
   audit: objectLike<AuditReport>(),
   record: objectLike<RecordData>(),
   quarantined: z.array(objectLike<QuarantinedItem>()),
+  comparison: z.array(objectLike<ComparedRow>()),
   servedFromCache: z.boolean(),
 });
 
 export function ReportAnalyzer({ exampleDocument }: { exampleDocument: string }): ReactElement {
   const textareaId = useId();
+  const previousTextareaId = useId();
   const errorId = useId();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [text, setText] = useState('');
+  const [previousText, setPreviousText] = useState('');
   const [status, setStatus] = useState<'idle' | 'working'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalyzeResponse | null>(null);
@@ -73,7 +79,7 @@ export function ReportAnalyzer({ exampleDocument }: { exampleDocument: string })
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ documentText: text }),
+        body: JSON.stringify({ documentText: text, previousDocumentText: previousText }),
       });
 
       const payload: unknown = await response.json();
@@ -151,6 +157,24 @@ export function ReportAnalyzer({ exampleDocument }: { exampleDocument: string })
             </p>
           )}
 
+          <label htmlFor={previousTextareaId} className="mt-2 text-sm font-medium text-slate-700">
+            Previous report (optional)
+          </label>
+          <p className="-mt-1 text-sm text-slate-600">
+            Paste an earlier report to see what changed. It is verified the same way.
+          </p>
+          <textarea
+            id={previousTextareaId}
+            value={previousText}
+            onChange={(event) => {
+              setPreviousText(event.target.value);
+            }}
+            rows={6}
+            maxLength={100_000}
+            placeholder="Optional. Paste an earlier lab report here."
+            className="w-full rounded-md border border-slate-300 p-3 font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+          />
+
           <div className="flex flex-wrap items-center gap-3">
             <Button type="submit" disabled={status === 'working'}>
               {status === 'working' ? 'Processing…' : 'Process report'}
@@ -201,6 +225,7 @@ export function ReportAnalyzer({ exampleDocument }: { exampleDocument: string })
           )}
 
           <IntegrityPanel audit={result.audit} />
+          <ComparisonTable rows={result.comparison} />
           <StructuredRecord data={result.record} />
           <QuarantineSection items={result.quarantined} />
         </>

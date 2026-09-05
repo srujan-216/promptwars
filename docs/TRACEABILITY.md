@@ -31,9 +31,10 @@ can actually do.
 | `lib/terminology/normalize.ts` | Deterministic analyte aliasing | `every canonical name is itself a stable fixed point` | 40 |
 | `lib/conflicts/detect.ts` | Flags contradictions, never resolves them | `flags rather than resolves — it never says which side is correct` | 25 |
 | `lib/compare/diff.ts` | Previous vs current report deltas | `describes the number only — direction carries no clinical meaning` | 19 |
+| `components/medical/ComparisonTable.tsx` | Renders the comparison; arithmetic framing only | `contains no language framing a change as good or bad` | 14 |
 | `lib/server/ai/provider.ts` | Gemini wrapper, sha256 cache, one retry | `serves an identical request from cache at zero cost` | 15 |
 | `lib/server/extraction/fallback.ts` | Pattern extraction when no API key is set | `produces a verified, evaluated record without any model call` | 10 |
-| `components/medical/ReportAnalyzer.tsx` | Paste form, error states, mode disclosure | `says no AI was used when the server reports the pattern fallback` | 17 |
+| `components/medical/ReportAnalyzer.tsx` | Paste form, previous-report field, error states, mode disclosure | `says no AI was used when the server reports the pattern fallback`, `sends the previous report to the server` | 21 |
 | `lib/env.ts` | Zod-validated environment | `never echoes the key value in the error message` | 10 |
 
 ## Engineering invariants
@@ -58,6 +59,6 @@ What enforces each rule from `CLAUDE.md`. "Enforced by" means a tool fails the b
 ## Not built
 
 Deliberate absences: file upload (paste only), persistence of any kind, authentication and
-access control, PDF export, deployment, a structured intake form, a rendered AI summary,
-and a UI for report comparison. See the README's *Future work* section. Nothing in this
+access control, PDF export, deployment, a structured intake form,
+and a rendered AI summary. See the README's *Future work* section. Nothing in this
 repository claims otherwise.

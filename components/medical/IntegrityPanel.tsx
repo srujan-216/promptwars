@@ -85,9 +85,12 @@ export function IntegrityPanel({ audit }: { audit: AuditReport }): ReactElement 
       <p className="mt-3 text-sm text-slate-600">
         {deterministicStageCount} of {deterministicStageCount + (aiCallCount > 0 ? 1 : 0)} pipeline
         stages ran as deterministic code with no AI involvement.
-        {guardrailTriggered
-          ? ' The safety guardrail rejected at least one generated summary.'
-          : ' The safety guardrail passed the generated summary.'}
+        {/*
+          Only claim something about the guardrail when it actually ran. No summary is
+          generated in this flow, so the previous "the guardrail passed the generated
+          summary" was asserting a check that never happened.
+        */}
+        {guardrailTriggered && ' The safety guardrail rejected at least one generated summary.'}
       </p>
 
       {findings.length > 0 && (

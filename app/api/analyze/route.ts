@@ -10,11 +10,14 @@ export const dynamic = 'force-dynamic';
 /** Roughly 40 pages of text. Bounds both memory and the model bill. */
 const MAX_DOCUMENT_CHARS = 100_000;
 
+const documentField = z
+  .string()
+  .max(MAX_DOCUMENT_CHARS, 'That document is too large. The limit is 100,000 characters.');
+
 const requestSchema = z.object({
-  documentText: z
-    .string()
-    .min(1, 'Paste a report before processing.')
-    .max(MAX_DOCUMENT_CHARS, 'That document is too large. The limit is 100,000 characters.'),
+  documentText: documentField.min(1, 'Paste a report before processing.'),
+  /** Optional earlier report, for comparison. Absent or blank means no comparison. */
+  previousDocumentText: documentField.optional(),
 });
 
 export type AnalyzeMode = 'gemini' | 'pattern_fallback';
@@ -55,9 +58,24 @@ export async function POST(request: Request): Promise<Response> {
   const provider = createProvider({ client });
 
   try {
+    // The earlier report goes through the same pipeline — same verification, same range
+    // rules — so a comparison is never drawn against unverified values.
+    const previousText = parsed.data.previousDocumentText?.trim() ?? '';
+    const previousResults =
+      previousText === ''
+        ? []
+        : (
+            await runExtractionPipeline({ documentText: previousText, provider })
+          ).labs.map((lab) => ({
+            canonicalName: lab.canonicalName,
+            value: lab.value.value,
+            unit: lab.unit,
+          }));
+
     const result = await runExtractionPipeline({
       documentText: parsed.data.documentText,
       provider,
+      previousResults,
     });
 
     const units = Object.fromEntries(
@@ -77,6 +95,7 @@ export async function POST(request: Request): Promise<Response> {
       audit: result.audit,
       record: presented.record,
       quarantined: presented.quarantined,
+      comparison: result.comparison,
       conflicts: result.conflicts,
       questions: result.questions,
       servedFromCache: result.servedFromCache,

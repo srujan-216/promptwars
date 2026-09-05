@@ -36,6 +36,7 @@ const OK_RESPONSE = {
     additionalObservations: [],
   },
   quarantined: [],
+  comparison: [],
 };
 
 function mockFetch(status: number, payload: unknown): void {
@@ -243,6 +244,78 @@ describe('ReportAnalyzer — accessibility', () => {
       const live = container.querySelector('[aria-live="polite"]');
       expect(live?.textContent).toContain('Processing complete');
     });
+  });
+});
+
+describe('ReportAnalyzer — previous report comparison', () => {
+  it('offers an optional previous-report field', () => {
+    render(<ReportAnalyzer exampleDocument={EXAMPLE} />);
+
+    expect(screen.getByLabelText('Previous report (optional)')).toBeInTheDocument();
+  });
+
+  it('sends the previous report to the server', async () => {
+    const user = userEvent.setup();
+    render(<ReportAnalyzer exampleDocument={EXAMPLE} />);
+
+    await user.click(screen.getByRole('button', { name: 'Load example' }));
+    await user.type(screen.getByLabelText('Previous report (optional)'), 'older report');
+    await user.click(screen.getByRole('button', { name: 'Process report' }));
+
+    await waitFor(() => {
+      expect(globalThis.fetch).toHaveBeenCalled();
+    });
+    const rawBody = vi.mocked(globalThis.fetch).mock.calls[0]?.[1]?.body;
+    expect(typeof rawBody).toBe('string');
+
+    const body: unknown = JSON.parse(typeof rawBody === 'string' ? rawBody : '{}');
+    expect(body).toMatchObject({ previousDocumentText: 'older report' });
+  });
+
+  it('renders the comparison table when the server returns rows', async () => {
+    mockFetch(200, {
+      ...OK_RESPONSE,
+      comparison: [
+        {
+          canonicalName: 'Hemoglobin',
+          previous: 11.2,
+          current: 13.4,
+          unit: 'g/dL',
+          delta: 2.2,
+          percentChange: 19.6,
+          direction: 'increased',
+          onlyInPrevious: false,
+          onlyInCurrent: false,
+          unitMismatch: false,
+        },
+      ],
+    });
+    const user = userEvent.setup();
+    render(<ReportAnalyzer exampleDocument={EXAMPLE} />);
+
+    await user.click(screen.getByRole('button', { name: 'Load example' }));
+    await user.click(screen.getByRole('button', { name: 'Process report' }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('region', { name: /Comparison with previous report/i }),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('omits the comparison table when no previous report was supplied', async () => {
+    const user = userEvent.setup();
+    render(<ReportAnalyzer exampleDocument={EXAMPLE} />);
+
+    await user.click(screen.getByRole('button', { name: 'Load example' }));
+    await user.click(screen.getByRole('button', { name: 'Process report' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: /Extraction integrity/i })).toBeInTheDocument();
+    });
+    expect(
+      screen.queryByRole('region', { name: /Comparison with previous report/i }),
+    ).not.toBeInTheDocument();
   });
 });
 

@@ -24,6 +24,12 @@ Paste a lab report into the form and press **Process report**. The text goes to
 `app/api/analyze/route.ts`, which Zod-validates it (100,000 character cap) and runs the
 real pipeline.
 
+Paste an earlier report into the optional **Previous report** field and a comparison table
+appears — Parameter, Previous, Current, Change. Both reports go through the same pipeline,
+so a comparison is never drawn against unverified values. Rows are matched on canonical
+analyte name, and the Change column is arithmetic only: it says a value rose or fell and by
+how much, never whether that is good or bad.
+
 **With no `GEMINI_API_KEY`, extraction falls back to deterministic pattern matching over
 the text you pasted — no model is called, and the interface says so in place.** A result
 produced without a model is never presented as though a model produced it. Everything after
@@ -49,7 +55,9 @@ field appears **zero** times inside the structured record.
 
 ## Pipeline
 
-Each stage is a real file. Exactly one calls a model.
+Each stage is a real file. Exactly one of the seven calls a model; the other six are pure
+functions. (A submission that includes a previous report runs this pipeline twice — once
+per document — so it makes two calls, not one.)
 
 | # | Stage | File | Kind |
 | --- | --- | --- | --- |
@@ -71,8 +79,9 @@ before anything tries to compare against it.
 
 Two claims, both asserted by tests rather than argued:
 
-- **One AI call, six deterministic stages.** `makes exactly one AI call and six
-  deterministic stages` reads the pipeline trace and asserts the ratio directly.
+- **One AI call, six deterministic stages, per document.** `makes exactly one AI call and
+  six deterministic stages` reads the pipeline trace and asserts the ratio directly. A
+  comparison submission processes two documents and so makes two calls.
 - **Re-submitting a document costs zero AI calls.** Requests are keyed by
   `sha256(model + systemInstruction + prompt + responseSchema)`. `costs zero model calls
   when the same document is submitted again` runs the full pipeline twice and asserts the
@@ -85,7 +94,7 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 
 ## Tests
 
-305 tests, all passing.
+323 tests, all passing.
 
 | Module | Tests |
 | --- | --- |
@@ -97,7 +106,8 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 | `lib/compare/diff.ts` | 19 |
 | `app/page.tsx` (incl. axe) | 19 |
 | `lib/clarify/questions.ts` | 18 |
-| `components/medical/ReportAnalyzer.tsx` | 17 |
+| `components/medical/ReportAnalyzer.tsx` | 21 |
+| `components/medical/ComparisonTable.tsx` | 14 |
 | `lib/server/ai/provider.ts` | 15 |
 | `lib/server/extraction/pipeline.ts` | 14 |
 | `lib/server/extraction/fallback.ts` | 10 |
@@ -168,5 +178,3 @@ rather than an oversight.
 - **PDF export.** Not built.
 - **Cloud Run deployment.** Nothing is deployed. There is no Dockerfile, no deployment
   pipeline, and no running service.
-- **Report comparison UI.** `lib/compare/diff.ts` is built and has 19 tests, but nothing
-  renders its output.
