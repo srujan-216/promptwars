@@ -69,6 +69,7 @@ What enforces each rule from `CLAUDE.md`. "Enforced by" means a tool fails the b
 | 7 | Prefer deterministic code over an AI call | 6 of 7 pipeline stages are pure; test `makes exactly one AI call and six deterministic stages` | Active |
 | 8 | Never log PHI | Nothing logs. `redact()` does not exist — see `docs/SECURITY.md` | Partial |
 | 9 | Tests ship with their module | Convention; CI runs `pnpm test` | Active |
+| 9b | Contrast meets WCAG AA | `lib/view/contrast.ts`; test `%s clears 4.5:1` over all 24 pairs | Active |
 | 10 | Status never by colour alone | `components/medical/StatusBadge.tsx` emits icon + text + colour; test `communicates status with text, not colour alone` | Active |
 | 11 | README never describes absent features | This file; tests `labels the worked example as synthetic with fixed AI output`, `states that only the model response is recorded`, `says no AI was used when the server reports the pattern fallback`, `passes the real guardrail` | Active |
 | 12 | API keys server-side only | `server-only` in `lib/server/**`; `getServerEnv()` never reaches a client bundle | Active |

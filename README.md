@@ -5,7 +5,7 @@
 > `rangeAppearsNearQuote` — and the test that proves it,
 > `rejects_prompt_injected_reference_range` in
 > [`lib/server/extraction/pipeline.test.ts`](lib/server/extraction/pipeline.test.ts).
-> **Run:** `pnpm install && pnpm verify` — typecheck, lint, 588 tests, build. No API key needed.
+> **Run:** `pnpm install && pnpm verify` — typecheck, lint, 620 tests, build. No API key needed.
 > **Live:** not yet deployed.
 
 Most AI medical tools ask you to trust the model. MedLens verifies it. Every extracted
@@ -185,7 +185,7 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 
 ## Tests
 
-588 tests, all passing.
+620 tests, all passing.
 
 | Module | Tests |
 | --- | --- |
@@ -215,6 +215,7 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 | `app/api/analyze/route.ts` (handler, end to end) | 26 |
 | `lib/server/rateLimit.ts` | 12 |
 | security headers (`next.config.ts`) | 15 |
+| `lib/view/contrast.ts` (WCAG ratios) | 32 |
 | `lib/server/extraction/pipeline.ts` | 14 |
 | `lib/server/extraction/fallback.ts` | 10 |
 | `lib/env.ts` | 10 |
@@ -233,9 +234,18 @@ and on every interactive component in each of its states — the form before and
 submission and in its error state, the intake form with rows and errors, the source view
 before selection, with a highlight and in the not-found state, the summary in all four of
 its states, the results table including the no-match state, and the page again after a
-quarantined field is manually verified. `color-contrast` is explicitly
-**disabled** rather than silently skipped — it needs a real canvas, which jsdom does not
-provide — so contrast remains a manual check. See [Known gaps](#known-gaps).
+quarantined field is manually verified. **Contrast is checked too, by a different route.** axe's `color-contrast` rule needs a
+browser to sample rendered pixels and jsdom has no canvas, so it is explicitly disabled in
+every axe run here. Disabling the most commonly failed success criterion and calling
+accessibility done would be an overclaim, so
+[`lib/view/contrast.ts`](lib/view/contrast.ts) enumerates all 24 foreground/background
+pairs the interface uses and computes their WCAG ratios from the hex values. **Every pair
+clears AA; the lowest is 4.76:1 (placeholder text) and 23 of 24 also clear AAA at 7:1.**
+Asserted in CI, not measured once.
+
+That verifies the palette, not the final composite — a combination nobody added to the list
+is unverified, and text over a gradient or image would be out of scope. See
+[Known gaps](#known-gaps).
 
 ## Getting started
 
@@ -271,9 +281,11 @@ than falling back to a placeholder.
 
 ## Known gaps
 
-- `color-contrast` is not verified automatically (jsdom has no canvas). Manual check.
+- Contrast is verified against the **palette**, not against what a browser finally
+  composites. A colour combination added to a component but not to `TEXT_PAIRS` is
+  unverified, and text over a gradient or image would be out of scope.
 - Accessibility coverage is component- and page-level under jsdom; there is no
-  browser-based scan.
+  browser-based scan, so anything only a real rendering engine can catch is not caught.
 - `redact()` / `lib/logging.ts` does not exist. No PHI is currently logged because nothing
   logs at all — see [`docs/SECURITY.md`](docs/SECURITY.md).
 
