@@ -5,7 +5,7 @@
 > `rangeAppearsNearQuote` — and the test that proves it,
 > `rejects_prompt_injected_reference_range` in
 > [`lib/server/extraction/pipeline.test.ts`](lib/server/extraction/pipeline.test.ts).
-> **Run:** `pnpm install && pnpm verify` — typecheck, lint, 570 tests, build. No API key needed.
+> **Run:** `pnpm install && pnpm verify` — typecheck, lint, 573 tests, build. No API key needed.
 > **Live:** not yet deployed.
 
 Most AI medical tools ask you to trust the model. MedLens verifies it. Every extracted
@@ -185,7 +185,7 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 
 ## Tests
 
-570 tests, all passing.
+573 tests, all passing.
 
 | Module | Tests |
 | --- | --- |
@@ -222,6 +222,11 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 | `app/api/health/route.ts` | 5 |
 | `components/ui/button.tsx` | 4 |
 
+**Coverage: 94.8% of statements, 90.5% of branches, 89.0% of functions** (`pnpm
+test:coverage`, v8 provider over `app/`, `components/` and `lib/`). The number is reported
+rather than gated — a threshold that fails the build tends to produce tests written to raise
+a number, and the tests here are meant to pin behaviour.
+
 Accessibility is tested, not asserted: axe-core reports zero violations on the full page
 and on every interactive component in each of its states — the form before and after
 submission and in its error state, the intake form with rows and errors, the source view
@@ -253,6 +258,7 @@ than falling back to a placeholder.
 | `pnpm typecheck` | `tsc --noEmit` |
 | `pnpm lint` | ESLint (typescript-eslint + jsx-a11y + Next) |
 | `pnpm test` | Vitest, run once |
+| `pnpm test:coverage` | Vitest with a v8 coverage summary |
 | **`pnpm verify`** | **typecheck → lint → test → build. The gate.** |
 
 ## Documentation

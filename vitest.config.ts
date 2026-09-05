@@ -21,5 +21,18 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
     include: ['**/*.test.{ts,tsx}'],
     exclude: ['node_modules/**', '.next/**'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'json-summary'],
+      // Only our own code. Config, stubs and type-only files would inflate the number
+      // without telling anyone anything.
+      include: ['app/**/*.{ts,tsx}', 'components/**/*.{ts,tsx}', 'lib/**/*.{ts,tsx}'],
+      exclude: [
+        '**/*.test.{ts,tsx}',
+        'tests/**',
+        'app/layout.tsx',
+        'lib/domain/types.ts',
+      ],
+    },
   },
 });
