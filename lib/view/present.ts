@@ -3,6 +3,7 @@ import type { RecordData, SimpleField } from '@/components/medical/StructuredRec
 import type { LabResult } from '@/lib/domain/types';
 import { evaluateRange } from '@/lib/ranges/evaluate';
 import { normalizeAnalyteName } from '@/lib/terminology/normalize';
+import type { TemplateInput } from '@/lib/server/ai/guardrail';
 import type { AuditReport } from '@/lib/verification/audit';
 
 /**
@@ -112,4 +113,41 @@ export function presentAudit(input: PresentInput): PresentedResult {
       additionalObservations: [],
     },
   };
+}
+
+/**
+ * Build the factual counts the summary is allowed to talk about, and a plain narrative of
+ * the verified results.
+ *
+ * The model is given ONLY this — never the raw document. It cannot reach a value that was
+ * quarantined or a reference range that was rejected, because neither survives into these
+ * inputs. That is the point: the summary stage cannot resurrect something verification
+ * already threw away.
+ */
+export function buildSummaryFacts(record: RecordData, audit: AuditReport): TemplateInput {
+  const labs = record.labs;
+  return {
+    totalResults: labs.length,
+    outsidePrintedRange: labs.filter((l) => l.status === 'low' || l.status === 'high').length,
+    noReferenceInSource: labs.filter((l) => l.status === 'no_reference_in_source').length,
+    fieldsVerified: audit.fieldsVerified,
+    fieldsQuarantined: audit.fieldsQuarantined,
+    rangesRejected: audit.hallucinatedRangesRejected,
+  };
+}
+
+/** Deterministic description of the verified results, as the summary prompt's only input. */
+export function buildFactsNarrative(record: RecordData): string {
+  if (record.labs.length === 0) return 'No laboratory results were verified in this document.';
+
+  return record.labs
+    .map((lab) => {
+      const value = `${String(lab.value.value)}${lab.unit === null ? '' : ` ${lab.unit}`}`;
+      const range =
+        lab.referenceText === null
+          ? 'no reference range printed'
+          : `printed range ${lab.referenceText}`;
+      return `${lab.canonicalName}: ${value}, ${range}, status ${lab.status}.`;
+    })
+    .join(' ');
 }

@@ -7,6 +7,7 @@ import {
   type TemplateInput,
 } from '@/lib/server/ai/guardrail';
 import type { Provider } from '@/lib/server/ai/provider';
+import type { SummarySource } from '@/lib/domain/types';
 
 /**
  * Summary generation with a guaranteed-safe floor (CLAUDE.md rule 5).
@@ -30,8 +31,6 @@ You must never: diagnose, name a condition, say the reader "has" anything, sugge
 Write plainly, in at most four sentences. End by suggesting the reader discuss the results with a qualified clinician.`;
 
 const STRICTER_PREFIX = `Your previous summary was rejected for containing language that is not permitted. Do not diagnose, do not name conditions, do not mention medication, dosage or treatment, and do not offer reassurance. State only what the document printed.`;
-
-export type SummarySource = 'generated' | 'regenerated' | 'deterministic_template';
 
 export interface SummaryResult {
   text: string;

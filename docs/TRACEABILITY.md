@@ -15,14 +15,14 @@ Run `pnpm test` to verify every test named here.
 | CR-3 | Structured Medical Record | `components/medical/StructuredRecord.tsx`, `lib/domain/types.ts` | `gives every section an accessible name`, `shows the unverifiable field in the quarantine region only` | Done |
 | CR-4 | Reference-Range Awareness | `lib/ranges/evaluate.ts` | `treats the lower bound as inclusive`, `returns no_reference_in_source when the range is null`, `returns unit_mismatch and refuses to compare when units differ` (46 tests) | Done |
 | CR-5 | Source & Provenance | `lib/verification/audit.ts`, `components/medical/OriginBadge.tsx`, `components/medical/QuarantineSection.tsx` | `quarantines a field whose quote is absent`, `rejects_prompt_injected_reference_range`, `flips a quarantined field to human-verified` | Done |
-| CR-6 | AI-Powered Summary | `lib/server/ai/summary.ts`, `lib/server/ai/guardrail.ts` | `returns generated text when it passes the guardrail`, `falls back to the template when both attempts break rules` | Partial — generated and guardrailed, but not rendered |
+| CR-6 | AI-Powered Summary | `components/medical/SummarySection.tsx` ← `app/api/analyze/route.ts` ← `lib/server/ai/summary.ts`, `lib/server/ai/guardrail.ts` | `renders the summary section when the server returns one`, `says visibly when the guardrail fired`, `falls back to the template when both attempts break rules` | Done |
 
 **On the qualified rows.** CR-2 is now genuinely Done: a user can paste a report and the
-UI reaches the real pipeline. CR-1 stays Partial because only report text can be submitted
-— there is no form for age, sex, symptoms or medications, so intake is inferred from the
-document rather than entered. CR-6 stays Partial because the summary is generated and
-guardrailed but no component displays it. Marking either Done would overstate what a user
-can actually do.
+UI reaches the real pipeline. CR-6 is now Done: the guardrailed summary is rendered, badged
+`ai_generated`, and a fired guardrail is stated visibly rather than hidden. CR-1 stays
+Partial because only report text can be submitted — there is no form for age, sex, symptoms
+or medications, so intake is inferred from the document rather than entered. Marking it Done
+would overstate what a user can actually do.
 
 ## Supporting modules
 
@@ -32,6 +32,7 @@ can actually do.
 | `lib/conflicts/detect.ts` | Flags contradictions, never resolves them | `flags rather than resolves — it never says which side is correct` | 25 |
 | `lib/compare/diff.ts` | Previous vs current report deltas | `describes the number only — direction carries no clinical meaning` | 19 |
 | `components/medical/ComparisonTable.tsx` | Renders the comparison; arithmetic framing only | `contains no language framing a change as good or bad` | 14 |
+| `components/medical/SummarySection.tsx` | Renders the summary; shows a fired guardrail | `does not badge the deterministic template as AI-written` | 14 |
 | `lib/server/ai/provider.ts` | Gemini wrapper, sha256 cache, one retry | `serves an identical request from cache at zero cost` | 15 |
 | `lib/server/extraction/fallback.ts` | Pattern extraction when no API key is set | `produces a verified, evaluated record without any model call` | 10 |
 | `components/medical/ReportAnalyzer.tsx` | Paste form, previous-report field, error states, mode disclosure | `says no AI was used when the server reports the pattern fallback`, `sends the previous report to the server` | 21 |
@@ -59,6 +60,5 @@ What enforces each rule from `CLAUDE.md`. "Enforced by" means a tool fails the b
 ## Not built
 
 Deliberate absences: file upload (paste only), persistence of any kind, authentication and
-access control, PDF export, deployment, a structured intake form,
-and a rendered AI summary. See the README's *Future work* section. Nothing in this
+access control, PDF export, deployment, and a structured intake form. See the README's *Future work* section. Nothing in this
 repository claims otherwise.

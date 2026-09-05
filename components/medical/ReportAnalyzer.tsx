@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { ComparisonTable } from '@/components/medical/ComparisonTable';
 import { IntegrityPanel } from '@/components/medical/IntegrityPanel';
 import { QuarantineSection } from '@/components/medical/QuarantineSection';
+import { SummarySection, type SummaryView } from '@/components/medical/SummarySection';
 import { StructuredRecord, type RecordData } from '@/components/medical/StructuredRecord';
 import type { QuarantinedItem } from '@/components/medical/QuarantineSection';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ export interface AnalyzeResponse {
   record: RecordData;
   quarantined: QuarantinedItem[];
   comparison: ComparedRow[];
+  summary: SummaryView | null;
   servedFromCache: boolean;
 }
 
@@ -47,6 +49,7 @@ const analyzeResponseSchema: z.ZodType<AnalyzeResponse> = z.object({
   record: objectLike<RecordData>(),
   quarantined: z.array(objectLike<QuarantinedItem>()),
   comparison: z.array(objectLike<ComparedRow>()),
+  summary: objectLike<SummaryView>().nullable(),
   servedFromCache: z.boolean(),
 });
 
@@ -224,7 +227,8 @@ export function ReportAnalyzer({ exampleDocument }: { exampleDocument: string })
             </aside>
           )}
 
-          <IntegrityPanel audit={result.audit} />
+          <IntegrityPanel audit={result.audit} summaryGenerated={result.summary !== null} />
+          <SummarySection summary={result.summary} />
           <ComparisonTable rows={result.comparison} />
           <StructuredRecord data={result.record} />
           <QuarantineSection items={result.quarantined} />

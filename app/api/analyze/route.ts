@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { createGeminiClient, createProvider, type ModelClient } from '@/lib/server/ai/provider';
 import { createPatternFallbackClient } from '@/lib/server/extraction/fallback';
 import { PipelineError, runExtractionPipeline } from '@/lib/server/extraction/pipeline';
-import { presentAudit } from '@/lib/view/present';
+import { generateSummary } from '@/lib/server/ai/summary';
+import { buildFactsNarrative, buildSummaryFacts, presentAudit } from '@/lib/view/present';
 
 export const dynamic = 'force-dynamic';
 
@@ -90,8 +91,29 @@ export async function POST(request: Request): Promise<Response> {
       allergies: result.allergies,
     });
 
+    // Only attempt a summary when a real model is available. The pattern fallback has no
+    // model to write prose, and generating a deterministic template here would present
+    // code-assembled text as though a summary stage had run. Absent means absent.
+    const summary =
+      mode === 'gemini'
+        ? await generateSummary({
+            provider,
+            facts: buildSummaryFacts(presented.record, result.audit),
+            factsNarrative: buildFactsNarrative(presented.record),
+          })
+        : null;
+
     return Response.json({
       mode,
+      summary:
+        summary === null
+          ? null
+          : {
+              text: summary.text,
+              source: summary.source,
+              guardrailTriggered: summary.guardrailTriggered,
+              rejectedAttemptCount: summary.rejectedAttempts.length,
+            },
       audit: result.audit,
       record: presented.record,
       quarantined: presented.quarantined,

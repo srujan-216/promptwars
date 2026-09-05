@@ -37,6 +37,7 @@ const OK_RESPONSE = {
   },
   quarantined: [],
   comparison: [],
+  summary: null,
 };
 
 function mockFetch(status: number, payload: unknown): void {
@@ -346,5 +347,101 @@ describe('ReportAnalyzer — quarantine stays separate', () => {
 
     const record = screen.getByRole('region', { name: /Structured record/i });
     expect(within(record).queryAllByText(/Vitamin D/)).toHaveLength(0);
+  });
+});
+
+describe('ReportAnalyzer — summary rendering', () => {
+  it('renders the summary section when the server returns one', async () => {
+    mockFetch(200, {
+      ...OK_RESPONSE,
+      mode: 'gemini',
+      summary: {
+        text: 'Two results were transcribed from this document.',
+        source: 'generated',
+        guardrailTriggered: false,
+        rejectedAttemptCount: 0,
+      },
+    });
+    const user = userEvent.setup();
+    render(<ReportAnalyzer exampleDocument={EXAMPLE} />);
+
+    await user.click(screen.getByRole('button', { name: 'Load example' }));
+    await user.click(screen.getByRole('button', { name: 'Process report' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: 'Summary' })).toBeInTheDocument();
+    });
+    expect(screen.getByText('Two results were transcribed from this document.')).toBeInTheDocument();
+  });
+
+  it('explains the absence when no summary was generated', async () => {
+    const user = userEvent.setup();
+    render(<ReportAnalyzer exampleDocument={EXAMPLE} />);
+
+    await user.click(screen.getByRole('button', { name: 'Load example' }));
+    await user.click(screen.getByRole('button', { name: 'Process report' }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/No summary was generated/)).toBeInTheDocument();
+    });
+  });
+
+  it('does not claim the guardrail passed when no summary exists', async () => {
+    const user = userEvent.setup();
+    render(<ReportAnalyzer exampleDocument={EXAMPLE} />);
+
+    await user.click(screen.getByRole('button', { name: 'Load example' }));
+    await user.click(screen.getByRole('button', { name: 'Process report' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: /Extraction integrity/i })).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/guardrail passed the generated summary/)).not.toBeInTheDocument();
+  });
+
+  it('reports the guardrail result in the integrity panel once a summary exists', async () => {
+    mockFetch(200, {
+      ...OK_RESPONSE,
+      mode: 'gemini',
+      summary: {
+        text: 'Two results were transcribed.',
+        source: 'generated',
+        guardrailTriggered: false,
+        rejectedAttemptCount: 0,
+      },
+    });
+    const user = userEvent.setup();
+    render(<ReportAnalyzer exampleDocument={EXAMPLE} />);
+
+    await user.click(screen.getByRole('button', { name: 'Load example' }));
+    await user.click(screen.getByRole('button', { name: 'Process report' }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/guardrail passed the generated summary/)).toBeInTheDocument();
+    });
+  });
+
+  it('has no axe violations with a summary rendered', async () => {
+    mockFetch(200, {
+      ...OK_RESPONSE,
+      mode: 'gemini',
+      summary: {
+        text: 'Two results were transcribed.',
+        source: 'regenerated',
+        guardrailTriggered: true,
+        rejectedAttemptCount: 1,
+      },
+    });
+    const user = userEvent.setup();
+    const { container } = render(<ReportAnalyzer exampleDocument={EXAMPLE} />);
+
+    await user.click(screen.getByRole('button', { name: 'Load example' }));
+    await user.click(screen.getByRole('button', { name: 'Process report' }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: 'Summary' })).toBeInTheDocument();
+    });
+
+    expect((await axe.run(container, AXE_OPTIONS)).violations).toEqual([]);
   });
 });

@@ -74,3 +74,11 @@ export interface LabResult {
   refUnit: string | null;
   status: RangeStatus;
 }
+
+/**
+ * Which tier of the summary chain produced the text a user is shown.
+ *
+ * Lives here rather than in `lib/server/ai/summary.ts` because client components need to
+ * label the result, and a client component must never import from `lib/server/**`.
+ */
+export type SummarySource = 'generated' | 'regenerated' | 'deterministic_template';

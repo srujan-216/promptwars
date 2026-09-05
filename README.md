@@ -94,7 +94,7 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 
 ## Tests
 
-323 tests, all passing.
+342 tests, all passing.
 
 | Module | Tests |
 | --- | --- |
@@ -106,8 +106,9 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 | `lib/compare/diff.ts` | 19 |
 | `app/page.tsx` (incl. axe) | 19 |
 | `lib/clarify/questions.ts` | 18 |
-| `components/medical/ReportAnalyzer.tsx` | 21 |
+| `components/medical/ReportAnalyzer.tsx` | 26 |
 | `components/medical/ComparisonTable.tsx` | 14 |
+| `components/medical/SummarySection.tsx` | 14 |
 | `lib/server/ai/provider.ts` | 15 |
 | `lib/server/extraction/pipeline.ts` | 14 |
 | `lib/server/extraction/fallback.ts` | 10 |
@@ -169,8 +170,6 @@ rather than an oversight.
 - **Structured intake form.** Only report text can be submitted. Age, sex, symptoms and
   medications cannot be entered; they are read from the document if present, which is why
   CR-1 is marked Partial in `docs/TRACEABILITY.md`.
-- **A rendered AI summary.** `lib/server/ai/summary.ts` generates and guardrails one, and
-  is tested, but no component displays it.
 - **Persistence.** Nothing is stored. There is no database and no in-memory store — a
   reload rebuilds the sample from source. Records do not survive anything.
 - **Authentication and access control.** None. There are no users and no patient records
