@@ -3,6 +3,7 @@
 import { useState, type ReactElement } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { ConfidenceBadge } from '@/components/medical/ConfidenceBadge';
 import { OriginBadge } from '@/components/medical/OriginBadge';
 import type { FieldOrigin } from '@/lib/domain/types';
 
@@ -27,6 +28,8 @@ export interface QuarantinedItem {
   /** The quote the model claimed but which was not found in the document. */
   claimedQuote: string | null;
   reason: string;
+  /** Model-reported. Advisory only — it played no part in the quarantine decision. */
+  confidence?: number;
 }
 
 interface VerifiedState {
@@ -118,6 +121,11 @@ export function QuarantineSection({
                       origin={state?.origin ?? item.origin}
                       verified={isVerified ? true : false}
                     />
+                    {item.confidence !== undefined && (
+                      <span className="ml-2">
+                        <ConfidenceBadge confidence={item.confidence} />
+                      </span>
+                    )}
                   </div>
 
                   {state !== undefined && (

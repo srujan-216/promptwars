@@ -77,6 +77,7 @@ export function presentAudit(input: PresentInput): PresentedResult {
       origin: field.origin,
       claimedQuote: field.sourceQuote,
       reason: 'The quoted text was not found anywhere in the document.',
+      confidence: field.confidence,
     }));
 
   const patientInformation: SimpleField[] =

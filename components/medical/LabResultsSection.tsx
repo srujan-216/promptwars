@@ -2,6 +2,7 @@
 
 import { useState, type ReactElement } from 'react';
 
+import { ConfidenceBadge } from '@/components/medical/ConfidenceBadge';
 import { LabFilter } from '@/components/medical/LabFilter';
 import { OriginBadge } from '@/components/medical/OriginBadge';
 import { StatusBadge } from '@/components/medical/StatusBadge';
@@ -55,7 +56,7 @@ export function LabResultsSection({ labs }: { labs: readonly LabResult[] }): Rea
             </p>
           ) : (
             <div className="mt-3 overflow-x-auto">
-              <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
+              <table className="w-full min-w-[48rem] border-collapse text-left text-sm">
                 <caption className="sr-only">
                   Laboratory results, with the reference range printed on the source report and
                   where each value came from.
@@ -74,8 +75,11 @@ export function LabResultsSection({ labs }: { labs: readonly LabResult[] }): Rea
                     <th scope="col" className="py-2 pr-4 font-semibold">
                       Status
                     </th>
-                    <th scope="col" className="py-2 font-semibold">
+                    <th scope="col" className="py-2 pr-4 font-semibold">
                       Source
+                    </th>
+                    <th scope="col" className="py-2 font-semibold">
+                      Confidence
                     </th>
                   </tr>
                 </thead>
@@ -106,8 +110,11 @@ export function LabResultsSection({ labs }: { labs: readonly LabResult[] }): Rea
                       <td className="py-3 pr-4">
                         <StatusBadge status={lab.status} />
                       </td>
-                      <td className="py-3">
+                      <td className="py-3 pr-4">
                         <OriginBadge origin={lab.value.origin} verified={lab.value.verified} />
+                      </td>
+                      <td className="py-3">
+                        <ConfidenceBadge confidence={lab.value.confidence} />
                       </td>
                     </tr>
                   ))}
