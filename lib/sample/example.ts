@@ -1,8 +1,6 @@
-import type { RecordData, SimpleField } from '@/components/medical/StructuredRecord';
 import type { QuarantinedItem } from '@/components/medical/QuarantineSection';
-import type { LabResult } from '@/lib/domain/types';
-import { evaluateRange } from '@/lib/ranges/evaluate';
-import { normalizeAnalyteName } from '@/lib/terminology/normalize';
+import type { RecordData } from '@/components/medical/StructuredRecord';
+import { presentAudit } from '@/lib/view/present';
 import { auditExtraction, type AuditReport, type ExtractedField } from '@/lib/verification/audit';
 
 /**
@@ -98,71 +96,7 @@ export function buildSampleResult(): SampleResult {
     deterministicStageCount: 6,
   });
 
-  const verifiedFields = audit.fields.filter((field) => !field.quarantined);
+  const presented = presentAudit({ audit, units: UNITS, reportDate: '2026-08-14' });
 
-  const labs: LabResult[] = verifiedFields.map((field): LabResult => {
-    const unit = UNITS[field.path] ?? null;
-    const value = typeof field.value === 'number' ? field.value : Number.NaN;
-    const evaluated = evaluateRange({
-      value,
-      unit,
-      referenceText: field.referenceText,
-      refUnit: unit,
-    });
-
-    return {
-      rawName: field.label,
-      canonicalName: normalizeAnalyteName(field.label).canonical,
-      value: {
-        value,
-        origin: 'ai_extracted',
-        confidence: field.confidence,
-        verified: field.verified,
-        ...(field.sourceQuote !== null
-          ? { source: { page: 1, quote: field.sourceQuote, offset: 0 } }
-          : {}),
-      },
-      unit,
-      referenceText: field.referenceText,
-      refLow: evaluated.refLow,
-      refHigh: evaluated.refHigh,
-      refUnit: unit,
-      status: evaluated.status,
-    };
-  });
-
-  const patientInformation: SimpleField[] = [
-    {
-      path: 'patient.reportDate',
-      label: 'Report date',
-      value: '2026-08-14',
-      origin: 'ai_extracted',
-      verified: true,
-    },
-  ];
-
-  const quarantined: QuarantinedItem[] = audit.fields
-    .filter((field) => field.quarantined)
-    .map((field) => ({
-      path: field.path,
-      label: field.label,
-      value: `${String(field.value)} ${UNITS[field.path] ?? ''}`.trim(),
-      origin: field.origin,
-      claimedQuote: field.sourceQuote,
-      reason: 'The quoted text was not found anywhere in the document.',
-    }));
-
-  return {
-    audit,
-    quarantined,
-    record: {
-      patientInformation,
-      symptoms: [],
-      conditionsAndHistory: [],
-      allergies: [],
-      medications: [],
-      labs,
-      additionalObservations: [],
-    },
-  };
+  return { audit, record: presented.record, quarantined: presented.quarantined };
 }

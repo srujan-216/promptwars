@@ -18,11 +18,25 @@ See [`rangeAppearsNearQuote`](lib/verification/audit.ts) and the test
 `rejects_prompt_injected_reference_range` in
 [`lib/server/extraction/pipeline.test.ts`](lib/server/extraction/pipeline.test.ts).
 
+## Using it
+
+Paste a lab report into the form and press **Process report**. The text goes to
+`app/api/analyze/route.ts`, which Zod-validates it (100,000 character cap) and runs the
+real pipeline.
+
+**With no `GEMINI_API_KEY`, extraction falls back to deterministic pattern matching over
+the text you pasted — no model is called, and the interface says so in place.** A result
+produced without a model is never presented as though a model produced it. Everything after
+extraction is identical: the same verification, the same positional range check, the same
+range evaluation.
+
 ## The thesis, working
 
-The interface renders a worked example containing all three failure modes at once. The
-document is synthetic and the model output is a fixture — the page says so — but the
-verification is the real production code running over that input.
+Below the form, a fixed worked example shows all three cases at once. It uses a fixture
+rather than the live path for an honest reason: the no-key fallback is a pattern matcher,
+so it never invents a range or quotes text that is not there, and therefore cannot
+demonstrate the checks that catch those things. The document is synthetic and the model
+output is fixed — the page says so — but the verification is the real production code.
 
 | Case | What the model claimed | What the system does | Shown as |
 | --- | --- | --- | --- |
@@ -71,7 +85,7 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 
 ## Tests
 
-278 tests, all passing.
+305 tests, all passing.
 
 | Module | Tests |
 | --- | --- |
@@ -83,15 +97,18 @@ comparison. Fewer model calls means less cost and fewer failure modes.
 | `lib/compare/diff.ts` | 19 |
 | `app/page.tsx` (incl. axe) | 19 |
 | `lib/clarify/questions.ts` | 18 |
+| `components/medical/ReportAnalyzer.tsx` | 17 |
 | `lib/server/ai/provider.ts` | 15 |
 | `lib/server/extraction/pipeline.ts` | 14 |
+| `lib/server/extraction/fallback.ts` | 10 |
 | `lib/env.ts` | 10 |
 | `lib/server/ai/summary.ts` | 9 |
 | `app/api/health/route.ts` | 5 |
 | `components/ui/button.tsx` | 4 |
 
 Accessibility is tested, not asserted: axe-core reports zero violations on the full page,
-and again after a quarantined field is manually verified. `color-contrast` is explicitly
+in the form's error state, after a successful submission, and again after a quarantined
+field is manually verified. `color-contrast` is explicitly
 **disabled** rather than silently skipped — it needs a real canvas, which jsdom does not
 provide — so contrast remains a manual check. See [Known gaps](#known-gaps).
 
@@ -138,9 +155,12 @@ than falling back to a placeholder.
 None of the following exists in this repository. Listed so their absence is a decision
 rather than an oversight.
 
-- **Document upload or paste UI.** There is no way to submit your own document. The
-  pipeline that would process it is built and tested; the interface to reach it is not.
-  The page renders a synthetic worked example and says so.
+- **File upload.** Paste only. There is no PDF, image or file input, and no OCR.
+- **Structured intake form.** Only report text can be submitted. Age, sex, symptoms and
+  medications cannot be entered; they are read from the document if present, which is why
+  CR-1 is marked Partial in `docs/TRACEABILITY.md`.
+- **A rendered AI summary.** `lib/server/ai/summary.ts` generates and guardrails one, and
+  is tested, but no component displays it.
 - **Persistence.** Nothing is stored. There is no database and no in-memory store — a
   reload rebuilds the sample from source. Records do not survive anything.
 - **Authentication and access control.** None. There are no users and no patient records

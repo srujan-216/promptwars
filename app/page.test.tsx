@@ -75,16 +75,18 @@ describe('HomePage — the safety banner', () => {
 });
 
 describe('HomePage — honesty about the sample', () => {
-  it('labels the example as synthetic', () => {
+  it('labels the worked example as synthetic with fixed AI output', () => {
     render(<HomePage />);
 
-    expect(screen.getByText(/Worked example — synthetic data/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Worked example — synthetic data, fixed AI output/),
+    ).toBeInTheDocument();
   });
 
-  it('says document upload is not built', () => {
+  it('says no AI call was made for the worked example', () => {
     render(<HomePage />);
 
-    expect(screen.getByText(/Document upload is not built yet/)).toBeInTheDocument();
+    expect(screen.getByText(/no AI call was made/)).toBeInTheDocument();
   });
 });
 

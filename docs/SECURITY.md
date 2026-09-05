@@ -25,7 +25,23 @@ contains document text. Test: `never includes the prompt in the error message`.
 A pasted medical document is untrusted. It is user-controlled, may be adversarial, and
 genuinely contains imperative sentences even when it is not.
 
-Handling, in [`lib/server/extraction/prompt.ts`](../lib/server/extraction/prompt.ts):
+At the HTTP boundary, [`app/api/analyze/route.ts`](../app/api/analyze/route.ts):
+
+- The body is Zod-validated. A body that is not JSON, or not the expected shape, returns
+  400 with a message written for a user — the offending input is never echoed back.
+- `documentText` is capped at **100,000 characters**, bounding both memory and the model
+  bill. The textarea enforces the same limit client-side; the server does not rely on it.
+- Failures return `PipelineError.userMessage`, which is generic by construction. Technical
+  detail stays server-side. Tested: `never shows a stack trace`.
+
+When no `GEMINI_API_KEY` is configured, extraction falls back to deterministic pattern
+matching ([`fallback.ts`](../lib/server/extraction/fallback.ts)) rather than calling a
+model. This is **not** a simulated model call and is never presented as one: the mode
+travels back in the response and the interface states that no AI was used. Tested:
+`says no AI was used when the server reports the pattern fallback`. The fallback quotes
+whole source lines verbatim, so verification passes honestly rather than by exemption.
+
+Prompt handling, in [`lib/server/extraction/prompt.ts`](../lib/server/extraction/prompt.ts):
 
 - Wrapped in `<untrusted_document>` … `</untrusted_document>`.
 - **Sentinel neutralisation**: any occurrence of those delimiters inside the document is

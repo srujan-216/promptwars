@@ -10,16 +10,19 @@ Run `pnpm test` to verify every test named here.
 
 | Req ID | Requirement | Implementation | Test | Status |
 | --- | --- | --- | --- | --- |
-| CR-1 | Patient Information Intake | `lib/clarify/questions.ts` (gap detection over intake), `components/medical/StructuredRecord.tsx` (Patient information section) | `asks for age when absent`, `asks for sex when absent` | Partial — no input form |
-| CR-2 | Medical Report Processing | `lib/server/extraction/pipeline.ts`, `lib/server/extraction/prompt.ts`, `lib/server/extraction/schema.ts` | `evaluates status from the genuine printed range`, `rejects model output that fails schema validation` | Done — no upload UI |
+| CR-1 | Patient Information Intake | `lib/clarify/questions.ts`, `components/medical/StructuredRecord.tsx` (Patient information section) | `asks for age when absent`, `asks for sex when absent` | Partial — report text only, no structured patient form |
+| CR-2 | Medical Report Processing | `components/medical/ReportAnalyzer.tsx` → `app/api/analyze/route.ts` → `lib/server/extraction/pipeline.ts` | `renders the result after a successful submission`, `evaluates status from the genuine printed range` | Done |
 | CR-3 | Structured Medical Record | `components/medical/StructuredRecord.tsx`, `lib/domain/types.ts` | `gives every section an accessible name`, `shows the unverifiable field in the quarantine region only` | Done |
 | CR-4 | Reference-Range Awareness | `lib/ranges/evaluate.ts` | `treats the lower bound as inclusive`, `returns no_reference_in_source when the range is null`, `returns unit_mismatch and refuses to compare when units differ` (46 tests) | Done |
 | CR-5 | Source & Provenance | `lib/verification/audit.ts`, `components/medical/OriginBadge.tsx`, `components/medical/QuarantineSection.tsx` | `quarantines a field whose quote is absent`, `rejects_prompt_injected_reference_range`, `flips a quarantined field to human-verified` | Done |
-| CR-6 | AI-Powered Summary | `lib/server/ai/summary.ts`, `lib/server/ai/guardrail.ts` | `returns generated text when it passes the guardrail`, `falls back to the template when both attempts break rules` | Done — not rendered |
+| CR-6 | AI-Powered Summary | `lib/server/ai/summary.ts`, `lib/server/ai/guardrail.ts` | `returns generated text when it passes the guardrail`, `falls back to the template when both attempts break rules` | Partial — generated and guardrailed, but not rendered |
 
-**On the three qualified rows.** CR-1 and CR-2 have working, tested back ends and no user
-interface to reach them; CR-6 generates a guardrailed summary that no component currently
-displays. Marking them "Done" outright would overstate what a user can actually do.
+**On the qualified rows.** CR-2 is now genuinely Done: a user can paste a report and the
+UI reaches the real pipeline. CR-1 stays Partial because only report text can be submitted
+— there is no form for age, sex, symptoms or medications, so intake is inferred from the
+document rather than entered. CR-6 stays Partial because the summary is generated and
+guardrailed but no component displays it. Marking either Done would overstate what a user
+can actually do.
 
 ## Supporting modules
 
@@ -29,6 +32,8 @@ displays. Marking them "Done" outright would overstate what a user can actually 
 | `lib/conflicts/detect.ts` | Flags contradictions, never resolves them | `flags rather than resolves — it never says which side is correct` | 25 |
 | `lib/compare/diff.ts` | Previous vs current report deltas | `describes the number only — direction carries no clinical meaning` | 19 |
 | `lib/server/ai/provider.ts` | Gemini wrapper, sha256 cache, one retry | `serves an identical request from cache at zero cost` | 15 |
+| `lib/server/extraction/fallback.ts` | Pattern extraction when no API key is set | `produces a verified, evaluated record without any model call` | 10 |
+| `components/medical/ReportAnalyzer.tsx` | Paste form, error states, mode disclosure | `says no AI was used when the server reports the pattern fallback` | 17 |
 | `lib/env.ts` | Zod-validated environment | `never echoes the key value in the error message` | 10 |
 
 ## Engineering invariants
@@ -47,11 +52,12 @@ What enforces each rule from `CLAUDE.md`. "Enforced by" means a tool fails the b
 | 8 | Never log PHI | Nothing logs. `redact()` does not exist — see `docs/SECURITY.md` | Partial |
 | 9 | Tests ship with their module | Convention; CI runs `pnpm test` | Active |
 | 10 | Status never by colour alone | `components/medical/StatusBadge.tsx` emits icon + text + colour; test `communicates status with text, not colour alone` | Active |
-| 11 | README never describes absent features | This file; tests `labels the example as synthetic` and `says document upload is not built` | Active |
+| 11 | README never describes absent features | This file; tests `labels the worked example as synthetic with fixed AI output`, `says no AI call was made for the worked example`, `says no AI was used when the server reports the pattern fallback` | Active |
 | 12 | API keys server-side only | `server-only` in `lib/server/**`; `getServerEnv()` never reaches a client bundle | Active |
 
 ## Not built
 
-Deliberate absences: document upload or paste UI, persistence of any kind, authentication
-and access control, PDF export, deployment, and a UI for report comparison. See the README's
-*Future work* section. Nothing in this repository claims otherwise.
+Deliberate absences: file upload (paste only), persistence of any kind, authentication and
+access control, PDF export, deployment, a structured intake form, a rendered AI summary,
+and a UI for report comparison. See the README's *Future work* section. Nothing in this
+repository claims otherwise.
